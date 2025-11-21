@@ -1,0 +1,2 @@
+- Only update Docs/ when asked
+- Keep documentation brief

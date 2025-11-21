@@ -6,23 +6,24 @@
 
 ## Overview
 
-Serial provides low-level console I/O for debugging and output. It's the primary interface for displaying information from userspace code.
+Serial provides low-level console I/O for debugging. It writes to stdout (not the terminal window) and maintains a buffer. Use this for debugging output that should go to the console rather than the graphical terminal.
 
 ## Implementation
 
 ```csharp
 namespace BlackBox.System;
 
-public class Serial
+public static class Serial
 {
-    public string ConsoleBuffer = "";
+    public static string ConsoleBuffer = "";
 
-    public void Write(string s)
+    public static void Write(string s)
     {
         Console.Write(s);
+        ConsoleBuffer += s;
     }
 
-    public string Read(string s)
+    public static string Read(string s)
     {
         return ConsoleBuffer;
     }
@@ -33,14 +34,14 @@ public class Serial
 
 ### Write(string)
 
-Writes a string directly to the console.
+Writes a string to stdout for debugging.
 
 **Parameters:**
 - `s` - String to write
 
 **Example:**
 ```csharp
-Serial.Write("Hello World\n");
+Serial.Write("Debug: x = 42\n");
 Serial.Write($"Value: {x}\n");
 ```
 
@@ -69,6 +70,28 @@ Public field storing console buffer contents.
 var content = Serial.ConsoleBuffer;
 ```
 
+## Serial vs Terminal
+
+**Important distinction:**
+
+- **`Serial.Write()`** - Writes to stdout (for debugging, logging, console output)
+- **`Terminal.Write()`** - Writes to the graphical terminal window (user-facing output)
+
+### When to use Serial
+
+Use Serial for:
+- Debug messages
+- Logging
+- Development diagnostics
+- Background process output
+
+### When to use Terminal
+
+Use Terminal for:
+- User-facing text in the terminal window
+- Interactive applications
+- Visual output in the GUI
+
 ## Usage from Userspace
 
 Serial is automatically available in userspace through the `BlackBox.System` namespace:
@@ -79,24 +102,7 @@ Serial.Write("Debug message\n");
 
 // Format strings
 var x = 42;
-Serial.Write($"Value of x: {x}\n");
-
-// Multiple writes
-Serial.Write("Line 1\n");
-Serial.Write("Line 2\n");
-Serial.Write("Line 3\n");
-```
-
-## Usage from Hostspace
-
-Serial instances can be passed to the Sandbox as globals:
-
-```csharp
-// In Host
-var serial = new Serial();
-var globals = new Globals { Serial = serial };
-
-await Sandbox.Execute("Serial.Write(\"Hello from userspace!\\n\");", globals);
+Serial.Write($"Debug: Value of x: {x}\n");
 ```
 
 ## Common Patterns
@@ -104,16 +110,6 @@ await Sandbox.Execute("Serial.Write(\"Hello from userspace!\\n\");", globals);
 ### Debug Output
 ```csharp
 Serial.Write($"[DEBUG] Function called with arg: {arg}\n");
-```
-
-### Progress Indicators
-```csharp
-for (int i = 0; i < 100; i++)
-{
-    Serial.Write($"\rProgress: {i}%");
-    Thread.Sleep(100);
-}
-Serial.Write("\n");
 ```
 
 ### Error Reporting
@@ -124,7 +120,7 @@ if (error)
 }
 ```
 
-### Formatted Tables
+### Formatted Debug Output
 ```csharp
 Serial.Write("PID   Name       Status\n");
 Serial.Write("---   ----       ------\n");
@@ -142,11 +138,10 @@ The name "Serial" reflects its purpose as a low-level, stream-based debugging in
 
 ### Buffer Management
 
-The `ConsoleBuffer` field is currently a simple string. In future implementations, this could be enhanced with:
+The `ConsoleBuffer` field is currently a simple string. Future enhancements could include:
 - Circular buffer for memory efficiency
 - Line-based history
 - Buffer size limits
-- Multiple virtual consoles
 
 ### Thread Safety
 
@@ -157,13 +152,11 @@ Current implementation writes directly to `Console.Write()`, which is thread-saf
 Potential additions:
 - `WriteLine(string)` - Write with automatic newline
 - `ReadLine()` - Read line from input
-- `Clear()` - Clear the console
-- `SetColor(ConsoleColor)` - Set text color
+- `Clear()` - Clear the buffer
 - Multiple output streams (stdout, stderr)
-- Input handling and echo control
 
 ## See Also
 
-- [IO](IO.md) - Higher-level I/O operations
+- [Terminal](TERMINAL.md) - Terminal window output (user-facing)
+- [Window](WINDOW.md) - Terminal window rendering
 - [System Layer](SYSTEM.md) - Overview of userspace APIs
-- [Sandbox](../Machine/SANDBOX.md) - Execution environment

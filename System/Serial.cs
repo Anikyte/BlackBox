@@ -6,7 +6,7 @@ namespace BlackBox.System;
 public static class Serial
 {
 	public static string ConsoleBuffer = "";
-	
+
 	public static void Write(string s)
 	{
 		Console.Write(s);

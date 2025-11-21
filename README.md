@@ -51,6 +51,8 @@ BlackBox provides a secure execution environment for C# scripts with:
 | **Machine** | Host | Main program loop, system management | 🚧 Placeholder |
 | **Machine** | Sandbox | Roslyn script executor (PID 0) | ✅ Complete |
 | **Machine** | Shell | Interactive user interface | 🚧 Placeholder |
+| **System** | Window | Raylib terminal window with shaders | ✅ Complete |
+| **System** | Terminal | VT100-like terminal emulator | ✅ Complete |
 | **System** | Serial | Low-level console I/O | ✅ Complete |
 | **System** | IO | High-level I/O operations | 🚧 Placeholder |
 | **System** | Process | Process management | 🚧 Placeholder |
@@ -133,7 +135,10 @@ BlackBox is in **early development**. Core Sandbox functionality is complete, ot
 - Sandbox execution engine
 - Main execution loop
 - Subprocess management
+- Terminal window with Raylib
+- Terminal emulator (VT100-like)
 - Serial console
+- Shader support for post-processing
 
 ### In Progress 🚧
 - Host loop

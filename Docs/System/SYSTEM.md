@@ -4,9 +4,27 @@ The System layer contains userspace-accessible APIs and syscalls. This is the bo
 
 ## Components
 
+### [Window](WINDOW.md) - `Window.cs` (root - hostspace)
+Raylib-based terminal window with shader support:
+- Hardware-accelerated rendering
+- Post-processing shader effects
+- Terminal display management
+- **Note:** Hostspace component at root level
+
+**Status:** ✅ Complete
+
+### [Terminal](TERMINAL.md) - `System/Terminal.cs` (userspace)
+Terminal API for userspace code:
+- Write to terminal window
+- Color and cursor control
+- Terminal buffer access
+- **Note:** Has companion hostspace class at `Terminal.cs` (root)
+
+**Status:** ✅ Complete
+
 ### [Serial](SERIAL.md) - `System/Serial.cs`
 Low-level serial console for debugging and output:
-- Direct console write access
+- Direct terminal write access
 - Console buffer management
 - Primary debugging interface
 
@@ -54,7 +72,8 @@ The System layer is automatically accessible from all sandboxed code through the
 │  (Running in Sandbox)              │
 │                                    │
 │  Can directly access:              │
-│  - Serial.Write()                  │
+│  - Terminal.Write() → Window       │
+│  - Serial.Write() → stdout         │
 │  - IO functions                    │
 │  - Process management              │
 │  - Filesystem operations           │
@@ -66,8 +85,14 @@ The System layer is automatically accessible from all sandboxed code through the
 │      BlackBox.System Namespace     │
 │                                    │
 │  ┌──────────────────────────────┐  │
-│  │  Serial                      │  │
-│  │  - Write(string)             │  │
+│  │  Terminal (userspace)        │  │
+│  │  - Write(string) → Window    │  │
+│  │  - Color/cursor control      │  │
+│  └──────────────────────────────┘  │
+│                                    │
+│  ┌──────────────────────────────┐  │
+│  │  Serial (debugging)          │  │
+│  │  - Write(string) → stdout    │  │
 │  │  - Read()                    │  │
 │  └──────────────────────────────┘  │
 │                                    │
@@ -101,7 +126,8 @@ The `BlackBox.System` namespace is automatically imported in the Sandbox, so use
 ```csharp
 // No need for: using BlackBox.System;
 
-Serial.Write("Hello World\n");
+Terminal.Write("Hello World\n");  // Write to terminal window
+Serial.Write("Debug info\n");     // Write to stdout for debugging
 var files = Filesystem.List("/");
 var pid = Process.Spawn("program.cs");
 ```

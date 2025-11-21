@@ -1,8 +1,19 @@
-﻿//this will initialize the game window and primary host loop
+using BlackBox;
 using BlackBox.Machine;
 
-//initialize window
-while (true)
+// Initialize window with terminal
+Window.Initialize(fontSize: 24);
+
+// Host static constructor runs tests automatically
+// Now run the main loop
+while (!Window.ShouldClose())
 {
+	Window.BeginFrame();
+
 	Host.Loop();
+
+	Window.Render();
+	Window.EndFrame();
 }
+
+Window.Close();
