@@ -2,4 +2,7 @@
 using BlackBox.Machine;
 
 //initialize window
-//initializeHostLoopAsync() or something
+while (true)
+{
+	Host.Loop();
+}
