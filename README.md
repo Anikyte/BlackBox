@@ -1,6 +1,6 @@
-# BlackBox
+# Black Box
 
-C# scripting sandbox built on Roslyn with strict userspace/hostspace separation.
+A video game through a C# REPL terminal. 
 
 ## Features
 
