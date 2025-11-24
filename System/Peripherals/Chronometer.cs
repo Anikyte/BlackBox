@@ -1,12 +1,12 @@
-namespace BlackBox.System.Peripherals;
+namespace System.Peripherals;
 
 public static class Chronometer
 {
-	private static long _time100NanosecondsSinceEpoch = 984241843990000000;
+	private static long time100NanosecondsSinceEpoch = 984241843990000000;
 	
 	public static long Time()
 	{
-		return _time100NanosecondsSinceEpoch;
+		return time100NanosecondsSinceEpoch;
 	}
 }
 

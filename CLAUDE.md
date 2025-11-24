@@ -1,3 +1,7 @@
 - Only update Docs/ when asked
 - Keep documentation brief
 - You can check Docs/ for complete documentation on various classes
+- prioritize static classes
+- no single use functions
+- code should be as concise as possible
+- Don't use dedicated setter functions. Use properties.

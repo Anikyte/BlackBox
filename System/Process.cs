@@ -1,4 +1,4 @@
-namespace BlackBox.System;
+namespace System;
 
 //process manager functions
 

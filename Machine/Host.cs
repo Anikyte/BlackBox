@@ -4,8 +4,8 @@ public static class Host
 {
 	static Host()
 	{
-		Window.Write("\n\nShell.Help() for available syscalls\n");
-		Shell.Enable();
+		Window.Terminal.Write("\n\nShell.Help() for available syscalls\n");
+		Shell.ShowPrompt();
 	}
 
 	public static void Loop()

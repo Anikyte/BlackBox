@@ -13,39 +13,38 @@ namespace BlackBox.Machine;
 
 public static class Sandbox
 {
-	private static ScriptOptions _scriptOptions;
-	private static ScriptState? _currentState;
-	private static readonly object _stateLock = new();
+	private static ScriptOptions scriptOptions;
+	private static ScriptState? currentState;
+	private static readonly ReaderWriterLockSlim StateLock = new(LockRecursionPolicy.SupportsRecursion);
 
 	// Main execution loop state
-	private static bool _running;
-	private static Task? _loopTask;
-	private static readonly CancellationTokenSource _loopCts = new();
-	private static Action? _loopAction;
-	private static readonly object _loopLock = new();
+	private static bool running;
+	private static Task? loopTask;
+	private static readonly CancellationTokenSource LoopCts = new();
+	private static Action? loopAction;
+	private static readonly object LoopLock = new();
 
 	// Subprocess management
-	private static readonly ConcurrentDictionary<int, SubProcess> _processes = new();
-	private static int _nextPid = 1; // PID 0 is the sandbox itself
+	private static readonly ConcurrentDictionary<int, SubProcess> Processes = new();
+	private static int nextPid = 1; // PID 0 is the sandbox itself
 
 	static Sandbox()
 	{
+		var assemblyBuilder = new SandboxAssemblyBuilder();
+		assemblyBuilder.BuildSandboxAssembly();
+
 		// Initialize Roslyn scripting environment with security restrictions
-		_scriptOptions = ScriptOptions.Default
-			.WithReferences(
-				typeof(object).Assembly,                    // mscorlib
-				typeof(Console).Assembly,                   // System.Console
-				typeof(IEnumerable<>).Assembly,            // System.Collections.Generic
-				typeof(Enumerable).Assembly,                // System.Linq
-				typeof(Terminal).Assembly     // BlackBox.System namespace
-			)
+		scriptOptions = ScriptOptions.Default
+			.AddReferences(assemblyBuilder.GetReferences())  // All runtime assemblies except System.IO
+			.AddReferences(typeof(Terminal).Assembly)         // BlackBox.System namespace
 			.WithImports(
-				"System", //todo: reimplement important system types or selectively import
+				"System",
 				"System.Collections.Generic",
 				"System.Linq",
-				"System.Text", //this should also possibly be excluded
-				"BlackBox.System",
-				"BlackBox.System.Peripherals"
+				"System.Text"
+				//"System.Peripherals"
+				//"BlackBox.System",
+				//"BlackBox.System.Peripherals"
 			)
 			.WithAllowUnsafe(false)                        // Disable unsafe code
 			.WithCheckOverflow(true);                       // Enable overflow checking
@@ -54,28 +53,47 @@ public static class Sandbox
 	/// <summary>
 	/// Executes C# code in the sandboxed environment
 	/// </summary>
-	public static async Task<ScriptExecutionResult> Execute(string code, object? globals = null, CancellationToken cancellationToken = default)
+	public static ScriptExecutionResult Execute(string code, object? globals = null, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			lock (_stateLock)
+			ScriptState? stateBeforeExecution;
+			ScriptState resultState;
+
+			StateLock.EnterWriteLock();
+			try
 			{
+				// Remember the state before execution
+				stateBeforeExecution = currentState;
+
 				// Create or continue script execution
-				if (_currentState == null)
+				if (currentState == null)
 				{
-					var script = CSharpScript.Create(code, _scriptOptions, globals?.GetType());
-					_currentState = script.RunAsync(globals, cancellationToken).Result;
+					var script = CSharpScript.Create(code, scriptOptions, globals?.GetType());
+					resultState = script.RunAsync(globals, cancellationToken).Result;
 				}
 				else
 				{
-					_currentState = _currentState.ContinueWithAsync(code, cancellationToken: cancellationToken).Result;
+					resultState = currentState.ContinueWithAsync(code, cancellationToken: cancellationToken).Result;
 				}
+
+				// Only update currentState if it wasn't modified by a nested Execute() call
+				// If a nested call updated it, that state takes precedence (it has the nested execution's variables)
+				if (currentState == stateBeforeExecution)
+				{
+					currentState = resultState;
+				}
+				// else: nested execution updated currentState, keep that updated state
+			}
+			finally
+			{
+				StateLock.ExitWriteLock();
 			}
 
 			return new ScriptExecutionResult
 			{
 				Success = true,
-				ReturnValue = _currentState.ReturnValue,
+				ReturnValue = currentState!.ReturnValue,
 				Exception = null
 			};
 		}
@@ -104,7 +122,7 @@ public static class Sandbox
 	/// <summary>
 	/// Executes code from a file in the sandboxed environment
 	/// </summary>
-	public static async Task<ScriptExecutionResult> ExecuteFile(string filePath, object? globals = null, CancellationToken cancellationToken = default)
+	public static ScriptExecutionResult ExecuteFile(string filePath, object? globals = null, CancellationToken cancellationToken = default)
 	{
 		if (!File.Exists(filePath))
 		{
@@ -115,8 +133,8 @@ public static class Sandbox
 			};
 		}
 
-		string code = await File.ReadAllTextAsync(filePath, cancellationToken);
-		return await Execute(code, globals, cancellationToken);
+		string code = File.ReadAllText(filePath);
+		return Execute(code, globals, cancellationToken);
 	}
 
 	/// <summary>
@@ -124,9 +142,14 @@ public static class Sandbox
 	/// </summary>
 	public static void Reset()
 	{
-		lock (_stateLock)
+		StateLock.EnterWriteLock();
+		try
 		{
-			_currentState = null;
+			currentState = null;
+		}
+		finally
+		{
+			StateLock.ExitWriteLock();
 		}
 	}
 
@@ -135,7 +158,7 @@ public static class Sandbox
 	/// </summary>
 	public static void AddReferences(params Assembly[] assemblies)
 	{
-		_scriptOptions = _scriptOptions.AddReferences(assemblies);
+		scriptOptions = scriptOptions.AddReferences(assemblies);
 	}
 
 	/// <summary>
@@ -144,7 +167,7 @@ public static class Sandbox
 	public static void AddReferences(params Type[] types)
 	{
 		var assemblies = types.Select(t => t.Assembly).Distinct();
-		_scriptOptions = _scriptOptions.AddReferences(assemblies);
+		scriptOptions = scriptOptions.AddReferences(assemblies);
 	}
 
 	/// <summary>
@@ -152,7 +175,7 @@ public static class Sandbox
 	/// </summary>
 	public static void AddImports(params string[] namespaces)
 	{
-		_scriptOptions = _scriptOptions.AddImports(namespaces);
+		scriptOptions = scriptOptions.AddImports(namespaces);
 	}
 
 	/// <summary>
@@ -172,7 +195,7 @@ public static class Sandbox
 	{
 		try
 		{
-			var result = await CSharpScript.EvaluateAsync<T>(expression, _scriptOptions, globals, cancellationToken: cancellationToken);
+			var result = await CSharpScript.EvaluateAsync<T>(expression, scriptOptions, globals, cancellationToken: cancellationToken);
 			return result;
 		}
 		catch
@@ -186,10 +209,10 @@ public static class Sandbox
 	/// </summary>
 	public static IEnumerable<ScriptVariable> GetVariables()
 	{
-		if (_currentState == null)
+		if (currentState == null)
 			return Enumerable.Empty<ScriptVariable>();
 
-		return _currentState.Variables.Select(v => new ScriptVariable
+		return currentState.Variables.Select(v => new ScriptVariable
 		{
 			Name = v.Name,
 			Type = v.Type,
@@ -204,25 +227,25 @@ public static class Sandbox
 	/// </summary>
 	public static void Run(Action loopAction)
 	{
-		if (_running)
+		if (running)
 			throw new InvalidOperationException("Sandbox is already running");
 
-		lock (_loopLock)
+		lock (LoopLock)
 		{
-			_loopAction = loopAction;
+			Sandbox.loopAction = loopAction;
 		}
 
-		_running = true;
+		running = true;
 
-		_loopTask = Task.Run(() =>
+		loopTask = Task.Run(() =>
 		{
-			while (_running && !_loopCts.Token.IsCancellationRequested)
+			while (running && !LoopCts.Token.IsCancellationRequested)
 			{
 				try
 				{
-					lock (_loopLock)
+					lock (LoopLock)
 					{
-						_loopAction?.Invoke();
+						Sandbox.loopAction?.Invoke();
 					}
 
 					// Automatically cleanup finished subprocesses
@@ -234,7 +257,7 @@ public static class Sandbox
 					Console.Error.WriteLine($"Sandbox loop error: {ex.Message}");
 				}
 			}
-		}, _loopCts.Token);
+		}, LoopCts.Token);
 	}
 
 	/// <summary>
@@ -250,8 +273,8 @@ public static class Sandbox
 	/// </summary>
 	public static void Stop()
 	{
-		_running = false;
-		_loopCts.Cancel();
+		running = false;
+		LoopCts.Cancel();
 	}
 
 	/// <summary>
@@ -259,16 +282,16 @@ public static class Sandbox
 	/// </summary>
 	public static async Task WaitForStop()
 	{
-		if (_loopTask != null)
+		if (loopTask != null)
 		{
-			await _loopTask;
+			await loopTask;
 		}
 	}
 
 	/// <summary>
 	/// Checks if the sandbox is currently running
 	/// </summary>
-	public static bool IsRunning => _running;
+	public static bool IsRunning => running;
 
 	// ===== SUBPROCESS MANAGEMENT =====
 
@@ -278,10 +301,10 @@ public static class Sandbox
 	/// </summary>
 	public static int Spawn(string code, object? globals = null)
 	{
-		var pid = Interlocked.Increment(ref _nextPid);
-		var process = new SubProcess(pid, code, _scriptOptions, globals);
+		var pid = Interlocked.Increment(ref nextPid);
+		var process = new SubProcess(pid, code, scriptOptions, globals);
 
-		if (_processes.TryAdd(pid, process))
+		if (Processes.TryAdd(pid, process))
 		{
 			process.Start();
 			return pid;
@@ -307,7 +330,7 @@ public static class Sandbox
 	/// </summary>
 	public static bool Kill(int pid)
 	{
-		if (_processes.TryRemove(pid, out var process))
+		if (Processes.TryRemove(pid, out var process))
 		{
 			process.Stop();
 			return true;
@@ -320,7 +343,7 @@ public static class Sandbox
 	/// </summary>
 	public static ProcessStatus? Status(int pid)
 	{
-		if (_processes.TryGetValue(pid, out var process))
+		if (Processes.TryGetValue(pid, out var process))
 		{
 			return process.GetStatus();
 		}
@@ -332,7 +355,7 @@ public static class Sandbox
 	/// </summary>
 	public static IEnumerable<int> ListPids()
 	{
-		return _processes.Keys.OrderBy(k => k);
+		return Processes.Keys.OrderBy(k => k);
 	}
 
 	/// <summary>
@@ -340,7 +363,7 @@ public static class Sandbox
 	/// </summary>
 	public static async Task<ScriptExecutionResult?> Wait(int pid)
 	{
-		if (_processes.TryGetValue(pid, out var process))
+		if (Processes.TryGetValue(pid, out var process))
 		{
 			return await process.WaitForCompletion();
 		}
@@ -352,14 +375,14 @@ public static class Sandbox
 	/// </summary>
 	private static void CleanupDeadProcesses()
 	{
-		var deadPids = _processes
+		var deadPids = Processes
 			.Where(kv => kv.Value.GetStatus().State == ProcessState.Exited)
 			.Select(kv => kv.Key)
 			.ToList();
 
 		foreach (var pid in deadPids)
 		{
-			_processes.TryRemove(pid, out _);
+			Processes.TryRemove(pid, out _);
 		}
 	}
 }
@@ -399,43 +422,43 @@ public class ProcessStatus
 
 internal class SubProcess
 {
-	private readonly int _pid;
-	private readonly string _code;
-	private readonly ScriptOptions _options;
-	private readonly object? _globals;
-	private readonly CancellationTokenSource _cts;
-	private readonly TaskCompletionSource<ScriptExecutionResult> _completionSource;
+	private readonly int pid;
+	private readonly string code;
+	private readonly ScriptOptions options;
+	private readonly object? globals;
+	private readonly CancellationTokenSource cts;
+	private readonly TaskCompletionSource<ScriptExecutionResult> completionSource;
 
-	private ProcessState _state;
-	private ScriptExecutionResult? _result;
-	private DateTime _startTime;
-	private DateTime? _endTime;
-	private Task? _executionTask;
+	private ProcessState state;
+	private ScriptExecutionResult? result;
+	private DateTime startTime;
+	private DateTime? endTime;
+	private Task? executionTask;
 
 	public SubProcess(int pid, string code, ScriptOptions options, object? globals)
 	{
-		_pid = pid;
-		_code = code;
-		_options = options;
-		_globals = globals;
-		_cts = new CancellationTokenSource();
-		_completionSource = new TaskCompletionSource<ScriptExecutionResult>();
-		_state = ProcessState.Starting;
+		this.pid = pid;
+		this.code = code;
+		this.options = options;
+		this.globals = globals;
+		cts = new CancellationTokenSource();
+		completionSource = new TaskCompletionSource<ScriptExecutionResult>();
+		state = ProcessState.Starting;
 	}
 
 	public void Start()
 	{
-		_startTime = DateTime.UtcNow;
-		_state = ProcessState.Running;
+		startTime = DateTime.UtcNow;
+		state = ProcessState.Running;
 
-		_executionTask = Task.Run(async () =>
+		executionTask = Task.Run(async () =>
 		{
 			try
 			{
-				var script = CSharpScript.Create(_code, _options, _globals?.GetType());
-				var scriptState = await script.RunAsync(_globals, _cts.Token);
+				var script = CSharpScript.Create(code, options, globals?.GetType());
+				var scriptState = await script.RunAsync(globals, cts.Token);
 
-				_result = new ScriptExecutionResult
+				result = new ScriptExecutionResult
 				{
 					Success = true,
 					ReturnValue = scriptState.ReturnValue,
@@ -444,7 +467,7 @@ internal class SubProcess
 			}
 			catch (CompilationErrorException ex)
 			{
-				_result = new ScriptExecutionResult
+				result = new ScriptExecutionResult
 				{
 					Success = false,
 					ReturnValue = null,
@@ -454,7 +477,7 @@ internal class SubProcess
 			}
 			catch (Exception ex)
 			{
-				_result = new ScriptExecutionResult
+				result = new ScriptExecutionResult
 				{
 					Success = false,
 					ReturnValue = null,
@@ -464,32 +487,32 @@ internal class SubProcess
 			}
 			finally
 			{
-				_state = ProcessState.Exited;
-				_endTime = DateTime.UtcNow;
-				_completionSource.TrySetResult(_result!);
+				state = ProcessState.Exited;
+				endTime = DateTime.UtcNow;
+				completionSource.TrySetResult(result!);
 			}
-		}, _cts.Token);
+		}, cts.Token);
 	}
 
 	public void Stop()
 	{
-		_cts.Cancel();
+		cts.Cancel();
 	}
 
 	public ProcessStatus GetStatus()
 	{
 		return new ProcessStatus
 		{
-			Pid = _pid,
-			State = _state,
-			Result = _result,
-			StartTime = _startTime,
-			EndTime = _endTime
+			Pid = pid,
+			State = state,
+			Result = result,
+			StartTime = startTime,
+			EndTime = endTime
 		};
 	}
 
 	public Task<ScriptExecutionResult> WaitForCompletion()
 	{
-		return _completionSource.Task;
+		return completionSource.Task;
 	}
 }

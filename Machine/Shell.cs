@@ -6,66 +6,44 @@ namespace BlackBox.Machine;
 
 public static class Shell
 {
-	private static string _inputBuffer = "";
-	private static bool _enabled = false;
-	private static int _cursorPosition = 0;
-	private static readonly List<string> _history = new();
-	private static int _historyIndex = -1;
+	private static string inputBuffer = "";
+	private static readonly List<string> History = new();
+	private static int historyIndex = -1;
+	private static int offset;
 
-	public static void Enable()
+	public static void ShowPrompt()
 	{
-		_enabled = true;
-		ShowPrompt();
+		Window.Terminal.Write("\n> ");
+		offset =  Window.Terminal.CursorX;
 	}
 
-	public static void Disable()
-	{
-		_enabled = false;
-	}
-
-	public static bool IsEnabled => _enabled;
-
-	private static void ShowPrompt()
-	{
-		Window.Write("\n> ");
-	}
-
-	/// <summary>
-	/// Process keyboard input for the REPL
-	/// </summary>
 	public static void ProcessInput()
 	{
-		if (!_enabled) return;
-
-		// Get keyboard input from Raylib
 		int key = Raylib_cs.Raylib.GetCharPressed();
 
 		while (key > 0)
 		{
-			// Printable character
 			if (key >= 32 && key <= 126)
 			{
 				char c = (char)key;
-				_inputBuffer = _inputBuffer.Insert(_cursorPosition, c.ToString());
-				_cursorPosition++;
-				Window.Write(c.ToString());
+				int cursorPos =  Window.Terminal.CursorX - offset;
+				inputBuffer = inputBuffer.Insert(cursorPos, c.ToString());
+				Window.Terminal.Write(c.ToString());
 			}
 
 			key = Raylib_cs.Raylib.GetCharPressed();
 		}
 
-		// Handle special keys
 		if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Enter))
 		{
 			ExecuteLine();
 		}
 		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Backspace))
 		{
-			if (_cursorPosition > 0 && _inputBuffer.Length > 0)
+			int cursorPos =  Window.Terminal.CursorX - offset;
+			if (cursorPos > 0 && inputBuffer.Length > 0)
 			{
-				_inputBuffer = _inputBuffer.Remove(_cursorPosition - 1, 1);
-				_cursorPosition--;
-				// Redraw line
+				inputBuffer = inputBuffer.Remove(cursorPos - 1, 1);
 				RedrawInputLine();
 			}
 		}
@@ -79,53 +57,48 @@ public static class Shell
 		}
 		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Left))
 		{
-			if (_cursorPosition > 0)
+			if (Window.Terminal.CursorX > offset)
 			{
-				_cursorPosition--;
+				Window.Terminal.CursorX--;
 			}
 		}
 		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Right))
 		{
-			if (_cursorPosition < _inputBuffer.Length)
+			if (Window.Terminal.CursorX < offset + inputBuffer.Length)
 			{
-				_cursorPosition++;
+				Window.Terminal.CursorX++;
 			}
 		}
 	}
 
 	private static void ExecuteLine()
 	{
-		Window.Write("\n");
+		Window.Terminal.Write("\n");
 
-		if (string.IsNullOrWhiteSpace(_inputBuffer))
+		if (string.IsNullOrWhiteSpace(inputBuffer))
 		{
 			ShowPrompt();
 			return;
 		}
 
-		// Add to history
-		_history.Add(_inputBuffer);
-		_historyIndex = _history.Count;
+		History.Add(inputBuffer);
+		historyIndex = History.Count;
 
-		string code = _inputBuffer.Trim();
-		_inputBuffer = "";
-		_cursorPosition = 0;
+		string code = inputBuffer.Trim();
+		inputBuffer = "";
 
-		// Handle special commands
-		var task = Sandbox.Execute(code);
-		task.Wait();
-		var result = task.Result;
+		var result = Sandbox.Execute(code);
 
 		if (result.Success)
 		{
 			if (result.ReturnValue != null)
 			{
-				Window.Write($"=> {result.ReturnValue}\n");
+				Window.Terminal.Write($"=> {result.ReturnValue}\n");
 			}
 		}
 		else
 		{
-			Window.Write($"Error: {result.ErrorMessage}\n");
+			Window.Terminal.Write($"Error: {result.ErrorMessage}\n");
 		}
 
 		ShowPrompt();
@@ -133,31 +106,28 @@ public static class Shell
 
 	private static void NavigateHistory(int direction)
 	{
-		if (_history.Count == 0) return;
+		if (History.Count == 0) return;
 
-		int newIndex = _historyIndex + direction;
+		int newIndex = historyIndex + direction;
 
-		if (newIndex >= 0 && newIndex < _history.Count)
+		if (newIndex >= 0 && newIndex < History.Count)
 		{
-			_historyIndex = newIndex;
-			_inputBuffer = _history[_historyIndex];
-			_cursorPosition = _inputBuffer.Length;
+			historyIndex = newIndex;
+			inputBuffer = History[historyIndex];
 			RedrawInputLine();
 		}
-		else if (newIndex >= _history.Count)
+		else if (newIndex >= History.Count)
 		{
-			_historyIndex = _history.Count;
-			_inputBuffer = "";
-			_cursorPosition = 0;
+			historyIndex = History.Count;
+			inputBuffer = "";
 			RedrawInputLine();
 		}
 	}
 
 	private static void RedrawInputLine()
 	{
-		// Clear current line by moving cursor back and writing spaces
-		// This is a simplified version - in a real terminal we'd use ANSI codes
-		// For now, just rewrite the prompt and buffer
-		Window.Write($"\r> {_inputBuffer}");
+		Window.Terminal.CursorX = offset;
+		Window.Terminal.Write(inputBuffer + new string(' ', Window.Terminal.Width - offset - inputBuffer.Length));
+		Window.Terminal.CursorX = offset + inputBuffer.Length;
 	}
 }

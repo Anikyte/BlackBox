@@ -1,4 +1,4 @@
-namespace BlackBox.System.Peripherals;
+namespace System.Peripherals;
 
 //sensor subsystem
 //works with raw sensor data

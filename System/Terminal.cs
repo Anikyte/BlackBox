@@ -1,16 +1,24 @@
-namespace BlackBox.System;
+using Window = global::BlackBox.Window;
+
+namespace System;
 
 /// <summary>
 /// Terminal userspace API for writing to the terminal window
 /// </summary>
 public static class Terminal
 {
+	public static int Height = Window.Terminal.Height;
+	public static int Width = Window.Terminal.Width;
+
+	public static (byte r, byte g, byte b) ColorFg = Window.Terminal.CurrentFg;
+	public static (byte r, byte g, byte b) ColorBg = Window.Terminal.CurrentBg;
+	
 	/// <summary>
 	/// Write text to the terminal window
 	/// </summary>
 	public static void Write(string text)
 	{
-		Window.Write(text);
+		Window.Terminal.Write(text);
 	}
 
 	/// <summary>
@@ -18,7 +26,7 @@ public static class Terminal
 	/// </summary>
 	public static void WriteLine(string text)
 	{
-		Window.Write(text + "\n");
+		Window.Terminal.Write(text + "\n");
 	}
 
 	/// <summary>
@@ -26,8 +34,7 @@ public static class Terminal
 	/// </summary>
 	public static void Clear()
 	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		terminal?.Clear();
+		Window.Terminal.Clear();
 	}
 
 	/// <summary>
@@ -35,26 +42,9 @@ public static class Terminal
 	/// </summary>
 	public static void SetCursorPosition(int x, int y)
 	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		terminal?.SetCursorPosition(x, y);
-	}
-
-	/// <summary>
-	/// Set foreground color
-	/// </summary>
-	public static void SetColor(byte r, byte g, byte b)
-	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		terminal?.SetColor(r, g, b);
-	}
-
-	/// <summary>
-	/// Set background color
-	/// </summary>
-	public static void SetBackgroundColor(byte r, byte g, byte b)
-	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		terminal?.SetBackgroundColor(r, g, b);
+		global::BlackBox.Terminal terminal = Window.Terminal;
+		terminal.CursorX = Math.Clamp(x, 0, terminal.Width - 1);
+		terminal.CursorY = Math.Clamp(y, 0, terminal.Height - 1);
 	}
 
 	/// <summary>
@@ -62,34 +52,12 @@ public static class Terminal
 	/// </summary>
 	public static void ResetColors()
 	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		terminal?.ResetColors();
+		Window.Terminal.CurrentFg = Window.Terminal.DefaultFg;
+		Window.Terminal.CurrentBg = Window.Terminal.DefaultBg;
 	}
 
 	/// <summary>
 	/// Get character at position
 	/// </summary>
-	public static char GetChar(int x, int y)
-	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		return terminal?.GetChar(x, y) ?? ' ';
-	}
-
-	/// <summary>
-	/// Get terminal width
-	/// </summary>
-	public static int GetWidth()
-	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		return terminal?.Width ?? 0;
-	}
-
-	/// <summary>
-	/// Get terminal height
-	/// </summary>
-	public static int GetHeight()
-	{
-		BlackBox.Terminal? terminal = Window.GetTerminal();
-		return terminal?.Height ?? 0;
-	}
+	public static char GetChar(int x, int y) => Window.Terminal.GetChar(x, y);
 }

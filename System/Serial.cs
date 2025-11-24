@@ -1,4 +1,4 @@
-namespace BlackBox.System;
+namespace System;
 
 //manages the low level "serial" console
 //mainly for debugging
