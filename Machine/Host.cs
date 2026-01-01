@@ -4,7 +4,6 @@ public static class Host
 {
 	static Host()
 	{
-		Window.Terminal.Write("\n\nShell.Help() for available syscalls\n");
 		Shell.ShowPrompt();
 	}
 

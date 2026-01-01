@@ -95,13 +95,15 @@ public static class Shell
 			var assemblies = AppDomain.CurrentDomain.GetAssemblies()
 				.Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
 				.ToList();
-
+/*
 			var type = assemblies
 				.SelectMany(a => {
 					try { return a.GetTypes(); }
 					catch { return Array.Empty<Type>(); }
 				})
-				.FirstOrDefault(t => t.Namespace != null && t.Namespace.StartsWith("System") && t.Name == className && t.IsPublic);
+				.FirstOrDefault(t => t.Namespace != null && t.Namespace.StartsWith("System") && !t.Namespace.StartsWith("System.IO") && t.Name == className && t.IsPublic);
+*/
+			var type = typeof(Path).Assembly.GetTypes().FirstOrDefault( t=> t.Namespace != null && t.Namespace.StartsWith("System") && t.Name == className && t.IsPublic);
 
 			if (type == null)
 			{
@@ -111,14 +113,24 @@ public static class Shell
 
 			Window.Terminal.Write($"{type.Name}:\n");
 
-			var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+			var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
 				.Where(m => !m.IsSpecialName)
 				.OrderBy(m => m.Name)
 				.ToList();
 
-			var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static)
+			if (methods.Count == 0)
+			{
+				Window.Terminal.Write($"- {type.Name} has no methods\n");
+			}
+			
+			var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly )
 				.OrderBy(p => p.Name)
 				.ToList();
+			
+			if (properties.Count == 0)
+			{
+				Window.Terminal.Write($"- {type.Name} has no properties\n");
+			}
 
 			foreach (var prop in properties)
 			{

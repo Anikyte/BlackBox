@@ -59,6 +59,20 @@ public static class Window
 		// 	_postProcessShader = Raylib.LoadShader(null, fragmentShaderPath);
 		// }
 		
+		var result = Sandbox.Execute(new Path("System/ShellRC.cs").Read());
+
+		if (result.Success)
+		{
+			if (result.ReturnValue != null)
+			{
+				Window.Terminal.Write($"=> {result.ReturnValue}\n");
+			}
+		}
+		else
+		{
+			Window.Terminal.Write($"Error: {result.ErrorMessage}\n");
+		}
+		
 		while (!ShouldClose())
 		{
 			BeginFrame();
