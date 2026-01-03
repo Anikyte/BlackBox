@@ -5,3 +5,4 @@
 - no single use functions
 - code should be as concise as possible
 - Don't use dedicated setter functions. Use properties.
+- Use as few variables as necessary. It is better to compute a value than to store it.

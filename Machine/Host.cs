@@ -1,16 +1,29 @@
+using System.Peripherals;
+using DateTime = System.DateTime;
+
 namespace BlackBox.Machine;
 
 public static class Host
 {
+	private static DateTime lastUpdateTime = DateTime.UtcNow;
+	private static long deltaTime;
+	
 	static Host()
 	{
 		Shell.ShowPrompt();
+		Reactor.Initialize(new Random(), 5, 12, 4, 12);
 	}
 
 	public static void Loop()
 	{
 		Shell.ProcessInput();
+		Reactor.Loop(deltaTime);
 
+		deltaTime = (DateTime.UtcNow - lastUpdateTime).Milliseconds;
+		lastUpdateTime = DateTime.UtcNow;
+
+		World.ShipTime += deltaTime;
+		
 		//todo:
 		//check sandbox status and error/crash handling
 		//update timed events

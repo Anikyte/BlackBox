@@ -5,6 +5,7 @@ namespace BlackBox.Machine;
 
 public static class World
 {
+	public static long ShipTime = 0;
 	//some array that holds physical objects and their data
 	//methods for turning that into sensor data (2d/3d/4d tables of measurements with metadata)
 }
