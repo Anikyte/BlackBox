@@ -1,4 +1,5 @@
 using System.Peripherals;
+using BlackBox.Machine.Peripherals;
 using DateTime = System.DateTime;
 
 namespace BlackBox.Machine;
@@ -11,7 +12,9 @@ public static class Host
 	static Host()
 	{
 		Shell.ShowPrompt();
-		Reactor.Initialize(new Random(), 5, 12, 4, 12);
+		Reactor.Initialize(new Random(1569285326), 5, 12, 4, 12);
+		Console.WriteLine(GUID.GUIDv4(new Random()));
+		Console.WriteLine(GUID.GUIDv7(new Random()));
 	}
 
 	public static void Loop()
