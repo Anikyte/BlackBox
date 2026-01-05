@@ -1,5 +1,5 @@
 using System.Peripherals;
-using BlackBox.Machine.Peripherals;
+using System.Utils;
 using DateTime = System.DateTime;
 
 namespace BlackBox.Machine;
@@ -8,13 +8,19 @@ public static class Host
 {
 	private static DateTime lastUpdateTime = DateTime.UtcNow;
 	private static long deltaTime;
+
+	public static Random Random = new Random(1569285326);
 	
 	static Host()
 	{
 		Shell.ShowPrompt();
-		Reactor.Initialize(new Random(1569285326), 5, 12, 4, 12);
-		Console.WriteLine(GUID.GUIDv4(new Random()));
-		Console.WriteLine(GUID.GUIDv7(new Random()));
+		
+		Device.Initialize();
+		Reactor.Initialize(Random, 5, 12, 4, 12);
+		
+		Console.WriteLine(GUID.V4(Random));
+		Console.WriteLine(GUID.V7(Random));
+		Console.WriteLine(GUID.V8(Random, 0, 0, 0, 1));
 	}
 
 	public static void Loop()

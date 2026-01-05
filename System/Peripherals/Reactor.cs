@@ -8,10 +8,7 @@ public enum FuelType
 }
 
 public static class Reactor
-{ //todo: abstract core logic into Machine/Peripherals and use some kind of ID system to link API calls to "physical" devices
-    //also todo: system wide integrated device system like on linux
-    //for now this is a good proof of concept though
-    //and the core logic is sound
+{ 
     public static List<RTG> RTGs { get; } = new List<RTG>();
     public static List<ControlRod> ControlRods { get; } = new List<ControlRod>();
     public static List<Pump> Pumps { get; } = new List<Pump>();
@@ -68,17 +65,17 @@ public static class Reactor
         public void Loop(double deltaTime);
     }
     
-    public class TemperatureDevice
+    public interface ITemperature
     {
-        public float Temperature { get; private set; }
+        public float Temperature { get; }
         
-        public float NeutronFlux { get; private set; }
-        public float AlphaFlux { get; private set; }
-        public float BetaFlux { get; private set; }
-        public float GammaFlux { get; private set; }
+        public float NeutronFlux { get; }
+        public float AlphaFlux { get; }
+        public float BetaFlux { get; }
+        public float GammaFlux { get; }
     }
 
-    public class Motor
+    public class Motor : Device, ITemperature
     {
         public float Speed
         {
@@ -91,14 +88,19 @@ public static class Reactor
 
         public float Torque { get; private set; } //todo: function of speed
         public float BackEMF { get; internal set; }
-        public float Temperature { get; internal set; }
+        
+        public float Temperature { get; }
+        public float NeutronFlux { get; }
+        public float AlphaFlux { get; }
+        public float BetaFlux { get; }
+        public float GammaFlux { get; }
 
         private readonly float jammed;
         private readonly float maxSpeed;
         private readonly float maxTorque;
         private readonly float maxTemperature;
 
-        public Motor(Int16 jammed, float maxSpeed, float maxTorque, float maxTemperature)
+        internal Motor(Int16 jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("motor", "motor inc", 1)
         {
             this.jammed = jammed;
             this.maxSpeed = maxSpeed;
@@ -107,10 +109,10 @@ public static class Reactor
         }
     }
 
-    public class RTG : TemperatureDevice, ILoop
+    public class RTG : Device, ITemperature, ILoop
     {
 
-        public RTG()
+        internal RTG() : base("rtg", "rtg inc", 2)
         {
             
         }
@@ -118,9 +120,15 @@ public static class Reactor
         public void Loop(double deltaTime)
         {
         }
+
+        public float Temperature { get; }
+        public float NeutronFlux { get; }
+        public float AlphaFlux { get; }
+        public float BetaFlux { get; }
+        public float GammaFlux { get; }
     }
 
-    public class ControlRod : TemperatureDevice, ILoop
+    public class ControlRod : Device, ITemperature, ILoop
     {
         private Int16 targetPosition = 0;
         private Int16 position = 0;
@@ -136,7 +144,7 @@ public static class Reactor
 
         public readonly Motor Motor;
 
-        public ControlRod(Int16 jammed)
+        internal ControlRod(Int16 jammed) : base("control rod", "reactor inc", 3)
         {
             Position = 0;
 
@@ -148,36 +156,54 @@ public static class Reactor
         {
             position = (Int16)((Int16)Math.Floor(Motor.Speed) + position);
         }
+
+        public float Temperature { get; }
+        public float NeutronFlux { get; }
+        public float AlphaFlux { get; }
+        public float BetaFlux { get; }
+        public float GammaFlux { get; }
     }
 
-    public class Pump : TemperatureDevice, ILoop
+    public class Pump : Device, ITemperature, ILoop
     {
         public float FlowRate { get; private set; }
 
         public readonly Motor Motor;
-        
-        public Pump()
+
+        internal Pump() : base("pump", "pump inc", 4)
         {
-            
+
         }
 
         public void Loop(double deltaTime)
         {
         }
+
+        public float Temperature { get; }
+        public float NeutronFlux { get; }
+        public float AlphaFlux { get; }
+        public float BetaFlux { get; }
+        public float GammaFlux { get; }
     }
 
-    public class FuelRod : TemperatureDevice, ILoop
+    public class FuelRod : Device, ITemperature, ILoop
     {
         public FuelType FuelType;
 
-        public FuelRod()
+        internal FuelRod() : base("fuel rod", "fuel inc", 5)
         {
-            
+
         }
 
         public void Loop(double deltaTime)
         {
         }
+
+        public float Temperature { get; }
+        public float NeutronFlux { get; }
+        public float AlphaFlux { get; }
+        public float BetaFlux { get; }
+        public float GammaFlux { get; }
     }
 
     public static class HeatExchangerPrimary
