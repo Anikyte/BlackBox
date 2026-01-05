@@ -1,8 +1,6 @@
-using System.Buffers.Binary;
-
 namespace BlackBox.Machine.Peripherals;
 
-public class GUID
+public static class GUID
 {
     private static string BytesToGUID(ReadOnlySpan<byte> bytes) => //horrific but it works
         $"{bytes[0]:x2}{bytes[1]:x2}{bytes[2]:x2}{bytes[3]:x2}-{bytes[4]:x2}{bytes[5]:x2}-{bytes[6]:x2}{bytes[7]:x2}-{bytes[8]:x2}{bytes[9]:x2}-{bytes[10]:x2}{bytes[11]:x2}{bytes[12]:x2}{bytes[13]:x2}{bytes[14]:x2}{bytes[15]:x2}";
@@ -60,4 +58,9 @@ public class GUID
         
         return BytesToGUID(bytes);
     }
+}
+
+public class Device
+{
+    
 }

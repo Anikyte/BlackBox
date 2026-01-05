@@ -13,6 +13,8 @@ public static class Shell
 	{
 		Window.Terminal.Write("\n> ");
 		offset =  Window.Terminal.CursorX;
+		Window.Terminal.Write(new string(' ', Window.Terminal.Width - offset));
+		Window.Terminal.CursorX = offset;
 	}
 
 	public static void ProcessInput()
@@ -26,7 +28,9 @@ public static class Shell
 				char c = (char)key;
 				int cursorPos =  Window.Terminal.CursorX - offset;
 				inputBuffer = inputBuffer.Insert(cursorPos, c.ToString());
-				Window.Terminal.Write(c.ToString());
+				Window.Terminal.CursorX = offset;
+				Window.Terminal.Write(inputBuffer + new string(' ', Window.Terminal.Width - offset - inputBuffer.Length));
+				Window.Terminal.CursorX = offset + cursorPos + 1;
 			}
 
 			key = Raylib_cs.Raylib.GetCharPressed();
@@ -36,31 +40,33 @@ public static class Shell
 		{
 			ExecuteLine();
 		}
-		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Backspace))
+		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Backspace) || Raylib_cs.Raylib.IsKeyPressedRepeat(Raylib_cs.KeyboardKey.Backspace))
 		{
 			int cursorPos =  Window.Terminal.CursorX - offset;
 			if (cursorPos > 0 && inputBuffer.Length > 0)
 			{
 				inputBuffer = inputBuffer.Remove(cursorPos - 1, 1);
-				RedrawInputLine();
+				Window.Terminal.CursorX = offset;
+				Window.Terminal.Write(inputBuffer + new string(' ', Window.Terminal.Width - offset - inputBuffer.Length));
+				Window.Terminal.CursorX = offset + cursorPos - 1;
 			}
 		}
-		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Up))
+		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Up) || Raylib_cs.Raylib.IsKeyPressedRepeat(Raylib_cs.KeyboardKey.Up))
 		{
 			NavigateHistory(-1);
 		}
-		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Down))
+		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Down) || Raylib_cs.Raylib.IsKeyPressedRepeat(Raylib_cs.KeyboardKey.Down))
 		{
 			NavigateHistory(1);
 		}
-		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Left))
+		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Left) || Raylib_cs.Raylib.IsKeyPressedRepeat(Raylib_cs.KeyboardKey.Left))
 		{
 			if (Window.Terminal.CursorX > offset)
 			{
 				Window.Terminal.CursorX--;
 			}
 		}
-		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Right))
+		else if (Raylib_cs.Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.Right) || Raylib_cs.Raylib.IsKeyPressedRepeat(Raylib_cs.KeyboardKey.Right))
 		{
 			if (Window.Terminal.CursorX < offset + inputBuffer.Length)
 			{
