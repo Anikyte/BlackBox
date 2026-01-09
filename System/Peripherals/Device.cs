@@ -6,11 +6,9 @@ namespace System.Peripherals;
 public class Device
 {
     public static List<Device> Devices { get; } = new();
+    private static Dictionary<byte, byte> NodeCounters { get; } = new();
 
-    public static void Initialize()
-    {
-        
-    }
+    public static void Initialize() { }
     
     public readonly GUID GUID;
     
@@ -21,14 +19,19 @@ public class Device
     internal Device(string name, string manufacturer, byte type)
     {
         Devices.Add(this);
-        
+
         Name = name;
         Manufacturer = manufacturer;
-        byte node = (byte)(Devices.Count - 1);
         
-        GUID = GUID.V8(Host.Random, 0, 0, type, node);
+        byte node = NodeCounters.TryGetValue(type, out byte count) ? count : (byte)0;
+        NodeCounters[type] = (byte)(node + 1);
+
+        GUID = GUID.V8(Host.Random, 0, 0, type, node); //todo: device high/low values (potentially name+manufacturer hash?)
     }
 
-    public int Slot => GUID.Node;
-    public int Type => GUID.Family;
+    internal virtual void Loop(double deltaTime) {}
+
+    public byte Slot => GUID.Node;
+    public byte Type => GUID.Family;
+    public int ID => BitConverter.ToUInt16([Type, Slot], 0);
 }

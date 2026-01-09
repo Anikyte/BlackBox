@@ -5,7 +5,7 @@ namespace BlackBox.Machine;
 
 public static class World
 {
-	public static long ShipTime = 984241843990000000;
+	public static long ShipTime = 984241843990000000; //time since epoch in ticks (100 nanoseconds)
 	//some array that holds physical objects and their data
 	//methods for turning that into sensor data (2d/3d/4d tables of measurements with metadata)
 }

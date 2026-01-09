@@ -2,12 +2,7 @@ namespace System.Peripherals;
 
 public static class Chronometer
 {
-	private static long time100NanosecondsSinceEpoch = 984241843990000000;
-	
-	public static long Time()
-	{
-		return time100NanosecondsSinceEpoch;
-	}
+	public static long Time { get; set; } = 984241843990000000; //ticks (100ns) since epoch
 }
 
 public class DateTime

@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace System.Peripherals;
 
 public enum FuelType
@@ -37,35 +35,7 @@ public static class Reactor
         }
     }
     
-    internal static void Loop(double deltaTime)
-    {
-        foreach (RTG rtg in RTGs)
-        {
-            rtg.Loop(deltaTime);
-        }
-
-        foreach (ControlRod controlRod in ControlRods)
-        {
-            controlRod.Loop(deltaTime);
-        }
-
-        foreach (Pump pump in Pumps)
-        {
-            pump.Loop(deltaTime);
-        }
-
-        foreach (FuelRod fuelRod in FuelRods)
-        {
-            fuelRod.Loop(deltaTime);
-        }
-    } 
-    
-    public interface ILoop
-    {
-        public void Loop(double deltaTime);
-    }
-    
-    public interface ITemperature
+    interface ITemperature
     {
         public float Temperature { get; }
         
@@ -88,19 +58,19 @@ public static class Reactor
 
         public float Torque { get; private set; } //todo: function of speed
         public float BackEMF { get; internal set; }
-        
-        public float Temperature { get; }
-        public float NeutronFlux { get; }
-        public float AlphaFlux { get; }
-        public float BetaFlux { get; }
-        public float GammaFlux { get; }
+
+        float ITemperature.Temperature { get; }
+        float ITemperature.NeutronFlux { get; }
+        float ITemperature.AlphaFlux { get; }
+        float ITemperature.BetaFlux { get; }
+        float ITemperature.GammaFlux { get; }
 
         private readonly float jammed;
         private readonly float maxSpeed;
         private readonly float maxTorque;
         private readonly float maxTemperature;
 
-        internal Motor(Int16 jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("motor", "motor inc", 1)
+        internal Motor(Int16 jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("motor", "motor inc", 0x01)
         {
             this.jammed = jammed;
             this.maxSpeed = maxSpeed;
@@ -109,15 +79,15 @@ public static class Reactor
         }
     }
 
-    public class RTG : Device, ITemperature, ILoop
+    public class RTG : Device, ITemperature
     {
 
-        internal RTG() : base("rtg", "rtg inc", 2)
+        internal RTG() : base("rtg", "rtg inc", 0x02)
         {
             
         }
 
-        public void Loop(double deltaTime)
+        internal override void Loop(double deltaTime)
         {
         }
 
@@ -128,7 +98,7 @@ public static class Reactor
         public float GammaFlux { get; }
     }
 
-    public class ControlRod : Device, ITemperature, ILoop
+    public class ControlRod : Device, ITemperature
     {
         private Int16 targetPosition = 0;
         private Int16 position = 0;
@@ -144,7 +114,7 @@ public static class Reactor
 
         public readonly Motor Motor;
 
-        internal ControlRod(Int16 jammed) : base("control rod", "reactor inc", 3)
+        internal ControlRod(Int16 jammed) : base("control rod", "reactor inc", 0x03)
         {
             Position = 0;
 
@@ -152,7 +122,7 @@ public static class Reactor
             Motor.Speed = 0;
         }
 
-        public void Loop(double deltaTime)
+        internal override void Loop(double deltaTime)
         {
             position = (Int16)((Int16)Math.Floor(Motor.Speed) + position);
         }
@@ -164,18 +134,18 @@ public static class Reactor
         public float GammaFlux { get; }
     }
 
-    public class Pump : Device, ITemperature, ILoop
+    public class Pump : Device, ITemperature
     {
         public float FlowRate { get; private set; }
 
         public readonly Motor Motor;
 
-        internal Pump() : base("pump", "pump inc", 4)
+        internal Pump() : base("pump", "pump inc", 0x04)
         {
 
         }
 
-        public void Loop(double deltaTime)
+        internal override void Loop(double deltaTime)
         {
         }
 
@@ -186,16 +156,16 @@ public static class Reactor
         public float GammaFlux { get; }
     }
 
-    public class FuelRod : Device, ITemperature, ILoop
+    public class FuelRod : Device, ITemperature
     {
         public FuelType FuelType;
 
-        internal FuelRod() : base("fuel rod", "fuel inc", 5)
+        internal FuelRod() : base("fuel rod", "fuel inc", 0x05)
         {
 
         }
 
-        public void Loop(double deltaTime)
+        internal override void Loop(double deltaTime)
         {
         }
 

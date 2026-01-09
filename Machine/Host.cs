@@ -7,9 +7,9 @@ namespace BlackBox.Machine;
 public static class Host
 {
 	private static DateTime lastUpdateTime = DateTime.UtcNow;
-	private static long deltaTime;
+	private static double deltaTime;
 
-	public static Random Random = new Random(1569285326);
+	public static Random Random = new(1569285326);
 	
 	static Host()
 	{
@@ -26,12 +26,14 @@ public static class Host
 	public static void Loop()
 	{
 		Shell.ProcessInput();
-		Reactor.Loop(deltaTime);
+		foreach (Device device in Device.Devices)
+		{
+			device.Loop(deltaTime); //todo: consider fixed point decimal
+		}
 
-		deltaTime = (DateTime.UtcNow - lastUpdateTime).Milliseconds;
+		deltaTime = (DateTime.UtcNow - lastUpdateTime).TotalSeconds;
+		World.ShipTime += (DateTime.UtcNow - lastUpdateTime).Ticks;
 		lastUpdateTime = DateTime.UtcNow;
-
-		World.ShipTime += deltaTime;
 		
 		//todo:
 		//check sandbox status and error/crash handling
