@@ -21,7 +21,7 @@ public static class Reactor
 
         for (var i = 0; i < controlRods; i++)
         {
-            ControlRods.Add(new ControlRod((short)random.Next(0, short.MaxValue)));
+            ControlRods.Add(new ControlRod(random.NextSingle()));
         }
 
         for (var i = 0; i < pumps; i++)
@@ -35,10 +35,10 @@ public static class Reactor
         }
     }
     
-    interface ITemperature
+    public interface ITemperature
     {
         public float Temperature { get; }
-        
+
         public float NeutronFlux { get; }
         public float AlphaFlux { get; }
         public float BetaFlux { get; }
@@ -47,33 +47,34 @@ public static class Reactor
 
     public class Motor : Device, ITemperature
     {
+        private float speed;
         public float Speed
         {
-            get { return 0; }
+            get { return speed; }
             set
             {
-                Math.Clamp(value, -maxSpeed, maxSpeed);
+                speed = Math.Clamp(value, -MaxSpeed, MaxSpeed);
             }
         }
 
         public float Torque { get; private set; } //todo: function of speed
         public float BackEMF { get; internal set; }
 
-        float ITemperature.Temperature { get; }
-        float ITemperature.NeutronFlux { get; }
-        float ITemperature.AlphaFlux { get; }
-        float ITemperature.BetaFlux { get; }
-        float ITemperature.GammaFlux { get; }
+        public float Temperature { get; internal set; }
+        public float NeutronFlux { get; internal set; }
+        public float AlphaFlux { get; internal set; }
+        public float BetaFlux { get; internal set; }
+        public float GammaFlux { get; internal set; }
 
         private readonly float jammed;
-        private readonly float maxSpeed;
+        public readonly float MaxSpeed;
         private readonly float maxTorque;
         private readonly float maxTemperature;
 
-        internal Motor(Int16 jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("motor", "motor inc", 0x01)
+        internal Motor(float jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("motor", "motor inc", 0x01)
         {
             this.jammed = jammed;
-            this.maxSpeed = maxSpeed;
+            this.MaxSpeed = MathF.Round(maxSpeed * jammed);
             this.maxTorque = maxTorque;
             this.maxTemperature = maxTemperature;
         }
@@ -84,18 +85,18 @@ public static class Reactor
 
         internal RTG() : base("rtg", "rtg inc", 0x02)
         {
-            
+
         }
 
         internal override void Loop(double deltaTime)
         {
         }
 
-        public float Temperature { get; }
-        public float NeutronFlux { get; }
-        public float AlphaFlux { get; }
-        public float BetaFlux { get; }
-        public float GammaFlux { get; }
+        public float Temperature { get; internal set; }
+        public float NeutronFlux { get; internal set; }
+        public float AlphaFlux { get; internal set; }
+        public float BetaFlux { get; internal set; }
+        public float GammaFlux { get; internal set; }
     }
 
     public class ControlRod : Device, ITemperature
@@ -114,7 +115,7 @@ public static class Reactor
 
         public readonly Motor Motor;
 
-        internal ControlRod(Int16 jammed) : base("control rod", "reactor inc", 0x03)
+        internal ControlRod(float jammed) : base("control rod", "reactor inc", 0x03)
         {
             Position = 0;
 
@@ -125,13 +126,21 @@ public static class Reactor
         internal override void Loop(double deltaTime)
         {
             position = (Int16)((Int16)Math.Floor(Motor.Speed) + position);
+            Motor.Speed = Math.Clamp(targetPosition - position, -Motor.MaxSpeed, Motor.MaxSpeed);
+            if (Motor.Speed != 0)
+            {
+                Terminal.WriteLine(Motor.Speed.ToString());
+                Terminal.WriteLine(Position.ToString());
+            }
+
+            Temperature += Motor.Speed;
         }
 
-        public float Temperature { get; }
-        public float NeutronFlux { get; }
-        public float AlphaFlux { get; }
-        public float BetaFlux { get; }
-        public float GammaFlux { get; }
+        public float Temperature { get; internal set; }
+        public float NeutronFlux { get; internal set; }
+        public float AlphaFlux { get; internal set; }
+        public float BetaFlux { get; internal set; }
+        public float GammaFlux { get; internal set; }
     }
 
     public class Pump : Device, ITemperature
@@ -149,11 +158,11 @@ public static class Reactor
         {
         }
 
-        public float Temperature { get; }
-        public float NeutronFlux { get; }
-        public float AlphaFlux { get; }
-        public float BetaFlux { get; }
-        public float GammaFlux { get; }
+        public float Temperature { get; internal set; }
+        public float NeutronFlux { get; internal set; }
+        public float AlphaFlux { get; internal set; }
+        public float BetaFlux { get; internal set; }
+        public float GammaFlux { get; internal set; }
     }
 
     public class FuelRod : Device, ITemperature
@@ -169,11 +178,11 @@ public static class Reactor
         {
         }
 
-        public float Temperature { get; }
-        public float NeutronFlux { get; }
-        public float AlphaFlux { get; }
-        public float BetaFlux { get; }
-        public float GammaFlux { get; }
+        public float Temperature { get; internal set; }
+        public float NeutronFlux { get; internal set; }
+        public float AlphaFlux { get; internal set; }
+        public float BetaFlux { get; internal set; }
+        public float GammaFlux { get; internal set; }
     }
 
     public static class HeatExchangerPrimary

@@ -1,119 +1,146 @@
 using BlackBox.Machine;
-using Raylib_cs;
-using System.Numerics;
+using FontStashSharp;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace BlackBox;
 
 /// <summary>
-/// Raylib window with terminal rendering and shader support (hostspace)
+/// MonoGame window with terminal rendering (hostspace)
 /// </summary>
-public static class Window
+public class BlackBox : Game
 {
 	private const int TERMINAL_WIDTH = 80;
 	private const int TERMINAL_HEIGHT = 25;
 	private const string TITLE = "Black Box";
 	private const string FONT_PATH = "./JetBrainsMono-Regular.ttf";
 	private const int FONT_SIZE = 24;
-	private const int TARGET_FPS = 60;
 	private const float CURSOR_BLINK_RATE = 0.5f;
 
-	public static Terminal Terminal = new(TERMINAL_WIDTH, TERMINAL_HEIGHT);
-	private static RenderTexture2D renderTexture;
-	private static Font font;
-	private static int charWidth = 8;
-	private static int charHeight = FONT_SIZE;
-	private static int windowWidth;
-	private static int windowHeight;
-	private static bool showCursor = true;
-	private static float cursorBlinkTime;
-	//private static Shader _postProcessShader;
+	private readonly GraphicsDeviceManager _graphics;
+	private SpriteBatch? _spriteBatch;
+	private RenderTarget2D? _renderTexture;
+	private Texture2D? _pixelTexture;
+	private DynamicSpriteFont? _font;
+	private FontSystem? _fontSystem;
 
+	public Terminal Terminal { get; private set; }
 
-	public static void Main()
+	private int _charWidth = 8;
+	private int _charHeight = FONT_SIZE;
+	private int _windowWidth;
+	private int _windowHeight;
+	private bool _showCursor = true;
+	private float _cursorBlinkTime;
+
+	public BlackBox()
 	{
-		Raylib.InitWindow(800, 600, TITLE);
-		Raylib.SetTargetFPS(TARGET_FPS);
+		_graphics = new GraphicsDeviceManager(this);
+		Content.RootDirectory = "Content";
+		IsMouseVisible = true;
+		IsFixedTimeStep = true;
+		TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 60.0);
+		Window.Title = TITLE;
 
+		Terminal = new Terminal(TERMINAL_WIDTH, TERMINAL_HEIGHT);
+	}
+
+	protected override void Initialize()
+	{
+		Terminal.InitializeInput(Window);
+		base.Initialize();
+	}
+
+	protected override void LoadContent()
+	{
+		_spriteBatch = new SpriteBatch(GraphicsDevice);
+
+		// Load font using FontStashSharp
 		if (File.Exists(FONT_PATH))
 		{
-			font = Raylib.LoadFontEx(FONT_PATH, charHeight, null, 0);
-			Raylib.SetTextureFilter(font.Texture, TextureFilter.Anisotropic16X);
+			_fontSystem = new FontSystem();
+			_fontSystem.AddFont(File.ReadAllBytes(FONT_PATH));
+			_font = _fontSystem.GetFont(_charHeight);
 		}
 		else
 		{
 			Console.WriteLine("Could not find font file: " + FONT_PATH);
-			font = Raylib.GetFontDefault();
+			// Fallback: we'd need a default font - for now just exit
+			Exit();
+			return;
 		}
 
-		var testChar = Raylib.MeasureTextEx(font, "M", charHeight, 0);
-		charWidth = (int)testChar.X;
+		// Measure character dimensions
+		var testSize = _font.MeasureString("M");
+		_charWidth = (int)testSize.X;
 
-		windowWidth = TERMINAL_WIDTH * charWidth;
-		windowHeight = (TERMINAL_HEIGHT + 1) * charHeight;
-		Raylib.SetWindowSize(windowWidth, windowHeight);
+		// Calculate window size
+		_windowWidth = TERMINAL_WIDTH * _charWidth;
+		_windowHeight = (TERMINAL_HEIGHT + 1) * _charHeight;
 
-		renderTexture = Raylib.LoadRenderTexture(windowWidth, windowHeight);
+		_graphics.PreferredBackBufferWidth = _windowWidth;
+		_graphics.PreferredBackBufferHeight = _windowHeight;
+		_graphics.ApplyChanges();
 
-		// if (File.Exists(fragmentShaderPath))
-		// {
-		// 	_postProcessShader = Raylib.LoadShader(null, fragmentShaderPath);
-		// }
-		
+		// Create render texture
+		_renderTexture = new RenderTarget2D(GraphicsDevice, _windowWidth, _windowHeight);
+
+		// Create 1x1 white pixel for rectangle drawing
+		_pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
+		_pixelTexture.SetData(new[] { Color.White });
+
+		// Execute ShellRC.cs initialization
 		var result = Sandbox.Execute(new Path("System/ShellRC.cs").Read());
-
 		if (result.Success)
 		{
 			if (result.ReturnValue != null)
 			{
-				Window.Terminal.Write($"=> {result.ReturnValue}\n");
+				Terminal.Write($"=> {result.ReturnValue}\n");
 			}
 		}
 		else
 		{
-			Window.Terminal.Write($"Error: {result.ErrorMessage}\n");
+			Terminal.Write($"Error: {result.ErrorMessage}\n");
 		}
-		
-		while (!ShouldClose())
-		{
-			BeginFrame();
-			ProcessScrolling();
-			Host.Loop();
-			Render();
-			EndFrame();
-		}
-
-		Raylib.UnloadRenderTexture(renderTexture);
-		Raylib.UnloadFont(font);
-		//Raylib.UnloadShader(_postProcessShader);
-		Raylib.CloseWindow();
 	}
 
-	public static bool ShouldClose() => Raylib.WindowShouldClose();
-
-	public static void BeginFrame()
+	protected override void Update(GameTime gameTime)
 	{
-		Raylib.BeginTextureMode(renderTexture);
-		Raylib.ClearBackground(Color.Black);
+		Terminal.UpdateInput(gameTime);
+		ProcessScrolling();
+		Host.Loop();
+		base.Update(gameTime);
 	}
 
-	public static void ProcessScrolling()
+	private void ProcessScrolling()
 	{
-		if (Raylib.IsKeyPressed(KeyboardKey.PageUp))
+		if (Terminal.IsKeyPressed(Keys.PageUp))
 			Terminal.PageUp();
-		else if (Raylib.IsKeyPressed(KeyboardKey.PageDown))
+		else if (Terminal.IsKeyPressed(Keys.PageDown))
 			Terminal.PageDown();
 
-		if (Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl))
+		if (Terminal.IsKeyDown(Keys.LeftControl) || Terminal.IsKeyDown(Keys.RightControl))
 		{
-			if (Raylib.IsKeyPressed(KeyboardKey.Up))
+			if (Terminal.IsKeyPressed(Keys.Up))
 				Terminal.PageUp();
-			else if (Raylib.IsKeyPressed(KeyboardKey.Down))
+			else if (Terminal.IsKeyPressed(Keys.Down))
 				Terminal.PageDown();
 		}
 	}
 
-	public static void Render()
+	protected override void Draw(GameTime gameTime)
 	{
+		if (_spriteBatch == null || _renderTexture == null || _pixelTexture == null || _font == null)
+			return;
+
+		// Render to texture
+		GraphicsDevice.SetRenderTarget(_renderTexture);
+		GraphicsDevice.Clear(Color.Black);
+
+		_spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
+
+		// Draw terminal characters
 		for (int y = 0; y < Terminal.Height; y++)
 		{
 			for (int x = 0; x < Terminal.Width; x++)
@@ -121,48 +148,74 @@ public static class Window
 				var bgColor = Terminal.GetBackgroundColor(x, y);
 				var fgColor = Terminal.GetForegroundColor(x, y);
 				var ch = Terminal.GetChar(x, y);
-				int posX = x * charWidth;
-				int posY = y * charHeight;
+				int posX = x * _charWidth;
+				int posY = y * _charHeight;
 
-				Raylib.DrawRectangle(posX, posY, charWidth, charHeight, new Color((int)bgColor.r, bgColor.g, bgColor.b, 255));
+				// Draw background rectangle
+				var bgRectangle = new Rectangle(posX, posY, _charWidth, _charHeight);
+				_spriteBatch.Draw(_pixelTexture, bgRectangle, new Color(bgColor.r, bgColor.g, bgColor.b));
 
+				// Draw character
 				if (ch != ' ')
-					Raylib.DrawTextEx(font, ch.ToString(), new Vector2(posX, posY), charHeight, 0, new Color((int)fgColor.r, fgColor.g, fgColor.b, 255));
+				{
+					_spriteBatch.DrawString(_font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
+				}
 			}
 		}
 
-		cursorBlinkTime += Raylib.GetFrameTime();
-		if (cursorBlinkTime >= CURSOR_BLINK_RATE)
+		// Update cursor blink
+		_cursorBlinkTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+		if (_cursorBlinkTime >= CURSOR_BLINK_RATE)
 		{
-			showCursor = !showCursor;
-			cursorBlinkTime = 0;
+			_showCursor = !_showCursor;
+			_cursorBlinkTime = 0;
 		}
 
-		if (showCursor)
+		// Draw cursor
+		if (_showCursor)
 		{
 			int cursorScreenY = Terminal.CursorY - Terminal.ViewportOffset;
 			if (cursorScreenY >= 0 && cursorScreenY < Terminal.Height)
 			{
-				int cursorX = Terminal.CursorX * charWidth;
-				int cursorY = (cursorScreenY + 1) * charHeight - 5;
-				Raylib.DrawRectangle(cursorX, cursorY, charWidth, 2, Color.White);
+				int cursorX = Terminal.CursorX * _charWidth;
+				int cursorY = (cursorScreenY + 1) * _charHeight - 5;
+				var cursorRectangle = new Rectangle(cursorX, cursorY, _charWidth, 2);
+				_spriteBatch.Draw(_pixelTexture, cursorRectangle, Color.White);
 			}
 		}
 
-		Raylib.EndTextureMode();
+		_spriteBatch.End();
+
+		// Draw texture to screen
+		GraphicsDevice.SetRenderTarget(null);
+		GraphicsDevice.Clear(Color.Black);
+
+		_spriteBatch.Begin();
+		_spriteBatch.Draw(_renderTexture, Vector2.Zero, Color.White);
+		_spriteBatch.End();
+
+		base.Draw(gameTime);
 	}
 
-	public static void EndFrame()
+	protected override void UnloadContent()
 	{
-		Raylib.BeginDrawing();
-		Raylib.ClearBackground(Color.Black);
-		
-		//Raylib.BeginShaderMode(_postProcessShader);
+		_renderTexture?.Dispose();
+		_pixelTexture?.Dispose();
+		base.UnloadContent();
+	}
+}
 
-		Raylib.DrawTextureRec(renderTexture.Texture, new Rectangle(0, 0, renderTexture.Texture.Width, -renderTexture.Texture.Height), new Vector2(0, 0), Color.White);
+/// <summary>
+/// Static entry point wrapper
+/// </summary>
+public static class Window
+{
+	private static BlackBox game = new();
 
-		//Raylib.EndShaderMode();
+	public static Terminal Terminal => game.Terminal;
 
-		Raylib.EndDrawing();
+	public static void Main()
+	{
+		game.Run();
 	}
 }

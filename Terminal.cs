@@ -1,7 +1,10 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+
 namespace BlackBox;
 
 /// <summary>
-/// Terminal emulator with VT100-like capabilities (hostspace)
+/// Terminal emulator with VT100-like capabilities and keyboard input (hostspace)
 /// </summary>
 public class Terminal
 {
@@ -25,6 +28,16 @@ public class Terminal
 	public (byte r, byte g, byte b) DefaultBg = (0, 0, 0);
 	public (byte r, byte g, byte b) CurrentFg;
 	public (byte r, byte g, byte b) CurrentBg;
+
+	// Input management
+	private KeyboardState _currentKeyState;
+	private KeyboardState _previousKeyState;
+	private readonly Queue<char> _charQueue = new();
+	private readonly Dictionary<Keys, double> _keyRepeatTimers = new();
+	private double _elapsedTime;
+
+	private const double RepeatDelay = 0.5;  // 500ms before repeat starts
+	private const double RepeatRate = 0.03;  // 30ms between repeats
 
 	public Terminal(int width = 80, int height = 25)
 	{
@@ -193,5 +206,83 @@ public class Terminal
 		if (x < 0 || x >= Width || y < 0 || y >= Height || bufferY >= TOTAL_BUFFER_LINES)
 			return DefaultBg;
 		return bgColors[bufferY, x];
+	}
+
+	// Input methods
+	public void InitializeInput(GameWindow window)
+	{
+		window.TextInput += OnTextInput;
+	}
+
+	private void OnTextInput(object? sender, TextInputEventArgs e)
+	{
+		// Only accept printable ASCII characters (32-126)
+		if (e.Character >= 32 && e.Character <= 126)
+		{
+			_charQueue.Enqueue(e.Character);
+		}
+	}
+
+	public int GetCharPressed()
+	{
+		return _charQueue.Count > 0 ? _charQueue.Dequeue() : 0;
+	}
+
+	public bool IsKeyPressed(Keys key)
+	{
+		return _currentKeyState.IsKeyDown(key) && _previousKeyState.IsKeyUp(key);
+	}
+
+	public bool IsKeyDown(Keys key)
+	{
+		return _currentKeyState.IsKeyDown(key);
+	}
+
+	public bool IsKeyPressedRepeat(Keys key)
+	{
+		bool isDown = _currentKeyState.IsKeyDown(key);
+		bool wasDown = _previousKeyState.IsKeyDown(key);
+
+		// First press
+		if (isDown && !wasDown)
+		{
+			_keyRepeatTimers[key] = 0;
+			return true;
+		}
+
+		// Key held down
+		if (isDown && wasDown)
+		{
+			if (!_keyRepeatTimers.ContainsKey(key))
+				_keyRepeatTimers[key] = 0;
+
+			_keyRepeatTimers[key] += _elapsedTime;
+
+			// After delay, start repeating
+			if (_keyRepeatTimers[key] >= RepeatDelay)
+			{
+				double timeInRepeat = _keyRepeatTimers[key] - RepeatDelay;
+				if (timeInRepeat >= RepeatRate)
+				{
+					_keyRepeatTimers[key] = RepeatDelay;  // Reset to start of repeat phase
+					return true;
+				}
+			}
+		}
+
+		// Key released
+		if (!isDown && _keyRepeatTimers.ContainsKey(key))
+		{
+			_keyRepeatTimers.Remove(key);
+		}
+
+		return false;
+	}
+
+	public void UpdateInput(GameTime gameTime)
+	{
+		_previousKeyState = _currentKeyState;
+		_currentKeyState = Keyboard.GetState();
+		_elapsedTime = gameTime.ElapsedGameTime.TotalSeconds;
 	}
 }
