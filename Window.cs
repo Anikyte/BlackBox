@@ -6,10 +6,13 @@ using Microsoft.Xna.Framework.Input;
 
 namespace BlackBox;
 
+//todo: IMPORTANT: create api for bitmap and file subwindows
+//also make file subwindow actually useful!
+
 /// <summary>
 /// MonoGame window with terminal rendering (hostspace)
 /// </summary>
-public class BlackBox : Game
+public class Window : Game
 {
 	private const int TERMINAL_WIDTH = 80;
 	private const int TERMINAL_HEIGHT = 25;
@@ -18,32 +21,38 @@ public class BlackBox : Game
 	private const int FONT_SIZE = 24;
 	private const float CURSOR_BLINK_RATE = 0.5f;
 
-	private readonly GraphicsDeviceManager _graphics;
-	private SpriteBatch? _spriteBatch;
-	private RenderTarget2D? _renderTexture;
-	private Texture2D? _pixelTexture;
-	private DynamicSpriteFont? _font;
-	private FontSystem? _fontSystem;
+	private readonly GraphicsDeviceManager graphics;
+	private SpriteBatch? spriteBatch;
+	private Texture2D? pixelTexture;
+	private DynamicSpriteFont? font;
+	private FontSystem? fontSystem;
 
-	public Terminal Terminal { get; private set; }
+	public static Terminal Terminal = new Terminal(TERMINAL_WIDTH, TERMINAL_HEIGHT);
 
-	private int _charWidth = 8;
-	private int _charHeight = FONT_SIZE;
-	private int _windowWidth;
-	private int _windowHeight;
-	private bool _showCursor = true;
-	private float _cursorBlinkTime;
+	private int charWidth = 8;
+	private int charHeight = FONT_SIZE;
+	private int windowWidth;
+	private int windowHeight;
+	private bool showCursor = true;
+	private float cursorBlinkTime;
+	
+	public static Rectangle MainPanelRectangle;
+	public static Rectangle BitmapPanelRectangle;
+	public static Rectangle FilePanelRectangle;
+	public static Rectangle BackgroundRectangle; 
+	
+	public static RenderTarget2D MainPanel;
+	public static RenderTarget2D BitmapPanel;
+	public static RenderTarget2D FilePanel;
 
-	public BlackBox()
+	public Window()
 	{
-		_graphics = new GraphicsDeviceManager(this);
+		graphics = new GraphicsDeviceManager(this);
 		Content.RootDirectory = "Content";
 		IsMouseVisible = true;
 		IsFixedTimeStep = true;
 		TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 60.0);
 		Window.Title = TITLE;
-
-		Terminal = new Terminal(TERMINAL_WIDTH, TERMINAL_HEIGHT);
 	}
 
 	protected override void Initialize()
@@ -54,14 +63,14 @@ public class BlackBox : Game
 
 	protected override void LoadContent()
 	{
-		_spriteBatch = new SpriteBatch(GraphicsDevice);
+		spriteBatch = new SpriteBatch(GraphicsDevice);
 
 		// Load font using FontStashSharp
 		if (File.Exists(FONT_PATH))
 		{
-			_fontSystem = new FontSystem();
-			_fontSystem.AddFont(File.ReadAllBytes(FONT_PATH));
-			_font = _fontSystem.GetFont(_charHeight);
+			fontSystem = new FontSystem();
+			fontSystem.AddFont(File.ReadAllBytes(FONT_PATH));
+			font = fontSystem.GetFont(charHeight);
 		}
 		else
 		{
@@ -72,23 +81,24 @@ public class BlackBox : Game
 		}
 
 		// Measure character dimensions
-		var testSize = _font.MeasureString("M");
-		_charWidth = (int)testSize.X;
-
+		var testSize = font.MeasureString("M");
+		charWidth = (int)testSize.X;
+		
 		// Calculate window size
-		_windowWidth = TERMINAL_WIDTH * _charWidth;
-		_windowHeight = (TERMINAL_HEIGHT + 1) * _charHeight;
+		windowWidth = TERMINAL_WIDTH * charWidth;
+		windowHeight = (TERMINAL_HEIGHT + 1) * charHeight;
 
-		_graphics.PreferredBackBufferWidth = _windowWidth;
-		_graphics.PreferredBackBufferHeight = _windowHeight;
-		_graphics.ApplyChanges();
-
-		// Create render texture
-		_renderTexture = new RenderTarget2D(GraphicsDevice, _windowWidth, _windowHeight);
+		graphics.PreferredBackBufferWidth = windowWidth + 300;
+		graphics.PreferredBackBufferHeight = windowHeight;
+		graphics.ApplyChanges();
+		
+		MainPanel = new RenderTarget2D(GraphicsDevice, windowWidth, windowHeight);
+		BitmapPanel = new RenderTarget2D(GraphicsDevice, 256, 256);
+		FilePanel = new RenderTarget2D(GraphicsDevice, 256, 256);
 
 		// Create 1x1 white pixel for rectangle drawing
-		_pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
-		_pixelTexture.SetData(new[] { Color.White });
+		pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
+		pixelTexture.SetData(new[] { Color.White });
 
 		// Execute ShellRC.cs initialization
 		var result = Sandbox.Execute(new Path("System/ShellRC.cs").Read());
@@ -101,7 +111,7 @@ public class BlackBox : Game
 		}
 		else
 		{
-			Terminal.Write($"Error: {result.ErrorMessage}\n");
+			Terminal.Write($"ShellRC Error: {result.ErrorMessage}\n");
 		}
 	}
 
@@ -131,14 +141,17 @@ public class BlackBox : Game
 
 	protected override void Draw(GameTime gameTime)
 	{
-		if (_spriteBatch == null || _renderTexture == null || _pixelTexture == null || _font == null)
+		if (spriteBatch == null || pixelTexture == null || font == null)
 			return;
-
+		
+		//todo: only on window resize?
+		Recalculate(Window.ClientBounds.Width, Window.ClientBounds.Height);
+		
 		// Render to texture
-		GraphicsDevice.SetRenderTarget(_renderTexture);
+		GraphicsDevice.SetRenderTarget(MainPanel);
 		GraphicsDevice.Clear(Color.Black);
 
-		_spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
+		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
 		// Draw terminal characters
 		for (int y = 0; y < Terminal.Height; y++)
@@ -148,74 +161,92 @@ public class BlackBox : Game
 				var bgColor = Terminal.GetBackgroundColor(x, y);
 				var fgColor = Terminal.GetForegroundColor(x, y);
 				var ch = Terminal.GetChar(x, y);
-				int posX = x * _charWidth;
-				int posY = y * _charHeight;
+				int posX = x * charWidth;
+				int posY = y * charHeight;
 
 				// Draw background rectangle
-				var bgRectangle = new Rectangle(posX, posY, _charWidth, _charHeight);
-				_spriteBatch.Draw(_pixelTexture, bgRectangle, new Color(bgColor.r, bgColor.g, bgColor.b));
+				var bgRectangle = new Rectangle(posX, posY, charWidth, charHeight);
+				spriteBatch.Draw(pixelTexture, bgRectangle, new Color(bgColor.r, bgColor.g, bgColor.b));
 
 				// Draw character
 				if (ch != ' ')
 				{
-					_spriteBatch.DrawString(_font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
+					spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
 				}
 			}
 		}
 
 		// Update cursor blink
-		_cursorBlinkTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-		if (_cursorBlinkTime >= CURSOR_BLINK_RATE)
+		cursorBlinkTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+		if (cursorBlinkTime >= CURSOR_BLINK_RATE)
 		{
-			_showCursor = !_showCursor;
-			_cursorBlinkTime = 0;
+			showCursor = !showCursor;
+			cursorBlinkTime = 0;
 		}
 
 		// Draw cursor
-		if (_showCursor)
+		if (showCursor)
 		{
 			int cursorScreenY = Terminal.CursorY - Terminal.ViewportOffset;
 			if (cursorScreenY >= 0 && cursorScreenY < Terminal.Height)
-			{
-				int cursorX = Terminal.CursorX * _charWidth;
-				int cursorY = (cursorScreenY + 1) * _charHeight - 5;
-				var cursorRectangle = new Rectangle(cursorX, cursorY, _charWidth, 2);
-				_spriteBatch.Draw(_pixelTexture, cursorRectangle, Color.White);
+			{ //todo: use unicode?
+				int cursorX = Terminal.CursorX * charWidth;
+				int cursorY = (cursorScreenY + 1) * charHeight - 5;
+				var cursorRectangle = new Rectangle(cursorX, cursorY, charWidth, 2);
+				spriteBatch.Draw(pixelTexture, cursorRectangle, Color.White);
 			}
 		}
+		spriteBatch.End();
 
-		_spriteBatch.End();
-
-		// Draw texture to screen
 		GraphicsDevice.SetRenderTarget(null);
-		GraphicsDevice.Clear(Color.Black);
+		GraphicsDevice.Clear(Color.Gray);
+		
+		spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
 
-		_spriteBatch.Begin();
-		_spriteBatch.Draw(_renderTexture, Vector2.Zero, Color.White);
-		_spriteBatch.End();
-
+		spriteBatch.Draw(MainPanel, MainPanelRectangle, Color.White);
+		spriteBatch.Draw(BitmapPanel, BitmapPanelRectangle, Color.White);
+		spriteBatch.Draw(FilePanel, FilePanelRectangle, Color.White);
+		
+		spriteBatch.End();
+		
 		base.Draw(gameTime);
 	}
 
+	public void Recalculate(int screenW, int screenH)
+	{
+		//todo: improve this function drastically
+        
+		float sideWidthFraction = 0.3f; // tune this
+		int sideW = (int)(screenW * sideWidthFraction);
+		int miniSize = sideW; // square
+        
+		int gap = screenH - (miniSize * 2);
+		if (gap < 0)
+		{
+			// screen too short - shrink minis to fit
+			miniSize = screenH / 2;
+			sideW = miniSize;
+			gap = 0;
+		}
+        
+		int mainW = screenW - sideW;
+        
+		MainPanelRectangle = new Rectangle(0, 0, mainW, screenH);
+		BitmapPanelRectangle = new Rectangle(mainW, 0, sideW, miniSize);
+		FilePanelRectangle = new Rectangle(mainW, screenH - miniSize, sideW, miniSize);
+		BackgroundRectangle = new Rectangle(mainW, miniSize, sideW, gap);
+	}
+	
 	protected override void UnloadContent()
 	{
-		_renderTexture?.Dispose();
-		_pixelTexture?.Dispose();
+		pixelTexture?.Dispose();
 		base.UnloadContent();
 	}
-}
-
-/// <summary>
-/// Static entry point wrapper
-/// </summary>
-public static class Window
-{
-	private static BlackBox game = new();
-
-	public static Terminal Terminal => game.Terminal;
+	
 
 	public static void Main()
 	{
+		Window game = new();
 		game.Run();
 	}
 }
