@@ -1,7 +1,9 @@
 namespace System.Peripherals;
 
-public static class Chronometer
+public class Chronometer : Device
 {
+	internal Chronometer(string name, string manufacturer, byte type) : base(name, manufacturer, type) {}
+
 	public static long Time { get; set; } = 984241843990000000; //ticks (100ns) since epoch
 }
 

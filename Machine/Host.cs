@@ -17,10 +17,11 @@ public static class Host
 		
 		Device.Initialize();
 		Reactor.Initialize(Random, 5, 12, 4, 12);
+		new Chronometer("Chronometer", "Timex", 0x11);
 		
-		Console.WriteLine(GUID.V4(Random));
-		Console.WriteLine(GUID.V7(Random));
-		Console.WriteLine(GUID.V8(Random, 0, 0, 0, 1));
+		// Console.WriteLine(GUID.V4(Random));
+		// Console.WriteLine(GUID.V7(Random));
+		// Console.WriteLine(GUID.V8(Random, 0, 0, 0, 1));
 	}
 
 	public static void Loop()

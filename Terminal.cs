@@ -6,6 +6,12 @@ namespace BlackBox;
 /// <summary>
 /// Terminal emulator with VT100-like capabilities and keyboard input (hostspace)
 /// </summary>
+
+//todo: IMPORTANT: modify terminal to be writable as a grid rather than standard line by line api
+//so Write('M', 12, 45) would write a character to (12,45)
+//integrate vectors?
+
+//todo: IMPORTANT: line wrap
 public class Terminal
 {
 	public int Width { get; private set; }

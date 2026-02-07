@@ -5,6 +5,8 @@ namespace System;
 /// <summary>
 /// Terminal userspace API for writing to the terminal window
 /// </summary>
+
+//todo: unify with BlackBox/Terminal.cs?
 public static class Terminal
 {
 	public static int Height = Window.Terminal.Height;
