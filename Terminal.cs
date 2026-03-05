@@ -285,7 +285,7 @@ public class Terminal
 		return false;
 	}
 
-	public void UpdateInput(GameTime gameTime)
+	public void UpdateInput(GameTime gameTime) //this should be elsewhere
 	{
 		_previousKeyState = _currentKeyState;
 		_currentKeyState = Keyboard.GetState();

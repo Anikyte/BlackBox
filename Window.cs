@@ -21,6 +21,8 @@ public class Window : Game
 	private const int FONT_SIZE = 24;
 	private const float CURSOR_BLINK_RATE = 0.5f;
 
+	public static int Gap = 6;
+
 	private readonly GraphicsDeviceManager graphics;
 	private SpriteBatch? spriteBatch;
 	private Texture2D? pixelTexture;
@@ -44,7 +46,8 @@ public class Window : Game
 	public static RenderTarget2D MainPanel;
 	public static RenderTarget2D BitmapPanel;
 	public static RenderTarget2D FilePanel;
-
+	public static RenderTarget2D Background;
+	
 	public Window()
 	{
 		graphics = new GraphicsDeviceManager(this);
@@ -88,20 +91,21 @@ public class Window : Game
 		windowWidth = TERMINAL_WIDTH * charWidth;
 		windowHeight = (TERMINAL_HEIGHT + 1) * charHeight;
 
-		graphics.PreferredBackBufferWidth = windowWidth + 300;
+		graphics.PreferredBackBufferWidth = windowWidth + Gap + 300;
 		graphics.PreferredBackBufferHeight = windowHeight;
 		graphics.ApplyChanges();
-		
+
 		MainPanel = new RenderTarget2D(GraphicsDevice, windowWidth, windowHeight);
 		BitmapPanel = new RenderTarget2D(GraphicsDevice, 256, 256);
 		FilePanel = new RenderTarget2D(GraphicsDevice, 256, 256);
+		Background = new RenderTarget2D(GraphicsDevice, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
 
 		// Create 1x1 white pixel for rectangle drawing
 		pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
 		pixelTexture.SetData(new[] { Color.White });
 
 		// Execute ShellRC.cs initialization
-		var result = Sandbox.Execute(new Path("System/ShellRC.cs").Read());
+		var result = Sandbox.Execute(new Path("System/Programs/Init.cs").Read());
 		if (result.Success)
 		{
 			if (result.ReturnValue != null)
@@ -143,17 +147,17 @@ public class Window : Game
 	{
 		if (spriteBatch == null || pixelTexture == null || font == null)
 			return;
-		
-		//todo: only on window resize?
+
 		Recalculate(Window.ClientBounds.Width, Window.ClientBounds.Height);
-		
-		// Render to texture
+
+		// --- Background ---
+		GraphicsDevice.SetRenderTarget(Background);
+		GraphicsDevice.Clear(Color.White);
+
+		// --- Main Panel (terminal) ---
 		GraphicsDevice.SetRenderTarget(MainPanel);
 		GraphicsDevice.Clear(Color.Black);
-
 		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-		// Draw terminal characters
 		for (int y = 0; y < Terminal.Height; y++)
 		{
 			for (int x = 0; x < Terminal.Width; x++)
@@ -164,77 +168,60 @@ public class Window : Game
 				int posX = x * charWidth;
 				int posY = y * charHeight;
 
-				// Draw background rectangle
-				var bgRectangle = new Rectangle(posX, posY, charWidth, charHeight);
-				spriteBatch.Draw(pixelTexture, bgRectangle, new Color(bgColor.r, bgColor.g, bgColor.b));
-
-				// Draw character
+				spriteBatch.Draw(pixelTexture, new Rectangle(posX, posY, charWidth, charHeight), new Color(bgColor.r, bgColor.g, bgColor.b));
 				if (ch != ' ')
-				{
 					spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
-				}
 			}
 		}
-
-		// Update cursor blink
 		cursorBlinkTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
 		if (cursorBlinkTime >= CURSOR_BLINK_RATE)
 		{
 			showCursor = !showCursor;
 			cursorBlinkTime = 0;
 		}
-
-		// Draw cursor
 		if (showCursor)
 		{
 			int cursorScreenY = Terminal.CursorY - Terminal.ViewportOffset;
 			if (cursorScreenY >= 0 && cursorScreenY < Terminal.Height)
-			{ //todo: use unicode?
-				int cursorX = Terminal.CursorX * charWidth;
-				int cursorY = (cursorScreenY + 1) * charHeight - 5;
-				var cursorRectangle = new Rectangle(cursorX, cursorY, charWidth, 2);
-				spriteBatch.Draw(pixelTexture, cursorRectangle, Color.White);
+			{
+				spriteBatch.Draw(pixelTexture,
+					new Rectangle(Terminal.CursorX * charWidth, (cursorScreenY + 1) * charHeight - 5, charWidth, 2),
+					Color.White);
 			}
 		}
 		spriteBatch.End();
 
-		GraphicsDevice.SetRenderTarget(null);
+		// --- Bitmap Panel ---
+		GraphicsDevice.SetRenderTarget(BitmapPanel);
 		GraphicsDevice.Clear(Color.Gray);
-		
-		spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
 
+		// --- File Panel ---
+		GraphicsDevice.SetRenderTarget(FilePanel);
+		GraphicsDevice.Clear(Color.Gray);
+
+		// --- Composite to screen ---
+		GraphicsDevice.SetRenderTarget(null);
+		spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
+		spriteBatch.Draw(Background, BackgroundRectangle, Color.White);
 		spriteBatch.Draw(MainPanel, MainPanelRectangle, Color.White);
 		spriteBatch.Draw(BitmapPanel, BitmapPanelRectangle, Color.White);
 		spriteBatch.Draw(FilePanel, FilePanelRectangle, Color.White);
-		
 		spriteBatch.End();
-		
+
 		base.Draw(gameTime);
 	}
 
-	public void Recalculate(int screenW, int screenH)
+	public static void Recalculate(int screenW, int screenH)
 	{
-		//todo: improve this function drastically
-        
-		float sideWidthFraction = 0.3f; // tune this
-		int sideW = (int)(screenW * sideWidthFraction);
-		int miniSize = sideW; // square
-        
-		int gap = screenH - (miniSize * 2);
-		if (gap < 0)
-		{
-			// screen too short - shrink minis to fit
-			miniSize = screenH / 2;
-			sideW = miniSize;
-			gap = 0;
-		}
-        
-		int mainW = screenW - sideW;
-        
+		int sideW = (int)(screenW * 0.3f);
+		int miniSize = Math.Min(sideW, (screenH - Gap) / 2);
+		sideW = Math.Min(sideW, miniSize);
+		int mainW = screenW - sideW - Gap;
+
+		BackgroundRectangle = new Rectangle(0, 0, screenW, screenH);
 		MainPanelRectangle = new Rectangle(0, 0, mainW, screenH);
-		BitmapPanelRectangle = new Rectangle(mainW, 0, sideW, miniSize);
-		FilePanelRectangle = new Rectangle(mainW, screenH - miniSize, sideW, miniSize);
-		BackgroundRectangle = new Rectangle(mainW, miniSize, sideW, gap);
+		BitmapPanelRectangle = new Rectangle(mainW + Gap, 0, sideW, miniSize);
+		FilePanelRectangle = new Rectangle(mainW + Gap, screenH - miniSize, sideW, miniSize);
 	}
 	
 	protected override void UnloadContent()

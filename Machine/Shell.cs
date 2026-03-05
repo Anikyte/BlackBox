@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Input;
 namespace BlackBox.Machine;
 
 //defines the shell and contains shell functions for hostspace
+//this could be implemented in userspace
 
 public static class Shell
 {

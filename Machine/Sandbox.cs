@@ -25,7 +25,7 @@ public static class Sandbox
 	private static readonly object LoopLock = new();
 
 	// Subprocess management
-	private static readonly ConcurrentDictionary<int, SubProcess> Processes = new();
+	public static readonly ConcurrentDictionary<int, SubProcess> Processes = new();
 	private static int nextPid = 1; // PID 0 is the sandbox itself
 
 	static Sandbox()
@@ -416,9 +416,9 @@ public class ProcessStatus
 	public DateTime? EndTime { get; set; }
 }
 
-internal class SubProcess
+public class SubProcess
 {
-	private readonly int pid;
+	public readonly int pid;
 	private readonly string code;
 	private readonly ScriptOptions options;
 	private readonly object? globals;
@@ -431,7 +431,12 @@ internal class SubProcess
 	private DateTime? endTime;
 	private Task? executionTask;
 
-	public SubProcess(int pid, string code, ScriptOptions options, object? globals)
+	public List<string> MessageQueue = new();
+	
+	public static implicit operator int(SubProcess p) => p.pid; 
+	public static explicit operator SubProcess(int i) => Sandbox.Processes.TryGetValue(i, out SubProcess p) ? p : null;
+
+	internal SubProcess(int pid, string code, ScriptOptions options, object? globals)
 	{
 		this.pid = pid;
 		this.code = code;
