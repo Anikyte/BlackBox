@@ -13,15 +13,28 @@ public static class Host
 	
 	static Host()
 	{
-		Shell.ShowPrompt();
-		
 		Device.Initialize();
 		Reactor.Initialize(Random, 5, 12, 4, 12);
 		new Chronometer("Chronometer", "Timex", 0x11);
 		
+		// Execute ShellRC.cs initialization
+		var result = Sandbox.Execute(new Path("System/Programs/Init.cs").Read());
+		if (result.Success)
+		{
+			if (result.ReturnValue != null)
+			{
+				System.Terminal.Write($"=> {result.ReturnValue}\n");
+			}
+		}
+		else
+		{
+			System.Terminal.Write($"ShellRC Error: {result.ErrorMessage}\n");
+		}
 		// Console.WriteLine(GUID.V4(Random));
 		// Console.WriteLine(GUID.V7(Random));
 		// Console.WriteLine(GUID.V8(Random, 0, 0, 0, 1));
+		
+		Shell.ShowPrompt(); //currently a race condition but will be fixed later when repl is entirely programspace
 	}
 
 	public static void Loop()

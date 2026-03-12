@@ -468,16 +468,21 @@ public class SubProcess
 			}
 			catch (CompilationErrorException ex)
 			{
+				var errorMsg = string.Join("\n", ex.Diagnostics);
+				Console.Error.WriteLine($"[PID {pid}] Compilation Error: {errorMsg}");
+				System.Terminal.WriteLine($"[PID {pid}] Compilation Error: {errorMsg}");
 				result = new ScriptExecutionResult
 				{
 					Success = false,
 					ReturnValue = null,
 					Exception = ex,
-					ErrorMessage = string.Join("\n", ex.Diagnostics)
+					ErrorMessage = errorMsg
 				};
 			}
 			catch (Exception ex)
 			{
+				Console.Error.WriteLine($"[PID {pid}] Runtime Error: {ex.Message}");
+				System.Terminal.WriteLine($"[PID {pid}] Runtime Error: {ex.Message}");
 				result = new ScriptExecutionResult
 				{
 					Success = false,

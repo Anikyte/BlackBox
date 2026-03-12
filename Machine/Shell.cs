@@ -100,12 +100,13 @@ public static class Shell
 		{
 			if (result.ReturnValue != null)
 			{
-				Window.Terminal.Write($"=> {result.ReturnValue}\n");
+				System.Terminal.WriteLine($"=> {result.ReturnValue}");
 			}
 		}
 		else
 		{
-			Window.Terminal.Write($"Error: {result.ErrorMessage}\n");
+			Console.Error.WriteLine($"[Shell] Runtime/Compilation Error: {result.ErrorMessage}");
+			System.Terminal.WriteLine($"[Shell] Runtime/Compilation Error: {result.ErrorMessage}");
 		}
 
 		ShowPrompt();

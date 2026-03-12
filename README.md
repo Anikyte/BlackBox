@@ -8,9 +8,13 @@ A video game about the end of everything through a C# REPL terminal.
 - found in `Machine`
 
 **Userspace**
-- everything the user can interact with
+- user accessible system types
 - sandboxed using roslyn interpeter
 - automatically allows access to public types and methods under the `System` namespace (see compilation)
+
+**Programspace**
+- code compiled at runtime within the virtual machine
+- programs, user data, puzzles, etc
 
 **Filesystem**
 - custom 'filesystem' implementation over top of user filesystem

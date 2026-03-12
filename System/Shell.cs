@@ -176,23 +176,6 @@ public static class Shell
 		}
 	}
 	
-	public static void Evaluate(string code)
-	{
-		var result = Sandbox.Execute(code);
-
-		if (result.Success)
-		{
-			if (result.ReturnValue != null)
-			{
-				Window.Terminal.Write($"=> {result.ReturnValue}\n");
-			}
-		}
-		else
-		{
-			Window.Terminal.Write($"Error: {result.ErrorMessage}\n");
-		}
-	}
-	
 	//File operations
 	public static void Read(string path)
 	{
@@ -211,12 +194,13 @@ public static class Shell
 		{
 			if (result.ReturnValue != null)
 			{
-				Window.Terminal.Write($"=> {result.ReturnValue}\n");
+				Terminal.WriteLine($"=> {result.ReturnValue}");
 			}
 		}
 		else
 		{
-			Window.Terminal.Write($"Error: {result.ErrorMessage}\n");
+			Console.Error.WriteLine($"[Shell] Runtime/Compilation Error: {result.ErrorMessage}");
+			Terminal.WriteLine($"[Shell] Runtime/Compilation Error: {result.ErrorMessage}");
 		}
 	}
 	

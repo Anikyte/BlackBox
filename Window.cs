@@ -103,20 +103,6 @@ public class Window : Game
 		// Create 1x1 white pixel for rectangle drawing
 		pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
 		pixelTexture.SetData(new[] { Color.White });
-
-		// Execute ShellRC.cs initialization
-		var result = Sandbox.Execute(new Path("System/Programs/Init.cs").Read());
-		if (result.Success)
-		{
-			if (result.ReturnValue != null)
-			{
-				Terminal.Write($"=> {result.ReturnValue}\n");
-			}
-		}
-		else
-		{
-			Terminal.Write($"ShellRC Error: {result.ErrorMessage}\n");
-		}
 	}
 
 	protected override void Update(GameTime gameTime)
