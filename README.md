@@ -26,7 +26,7 @@ A video game about the end of everything through a C# REPL terminal.
 - custom file operation implementation designed to reduce confusion for beginners while still being powerful and intuitive for experienced users
 - default files are found under `Files` in the project directory
 - will be copied to output on compilation
-- special file `ShellRC.cs` ran on terminal startup
+- special file `Shell.cs` ran on terminal startup
 
 **Compilation**
 - in order to partially replace certain system methods without reimplementing or recompiling the system library, 
