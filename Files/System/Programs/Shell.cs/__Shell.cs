@@ -7,7 +7,9 @@ Console.WriteLine("Shell Loaded");
 
 SubProcess me = Process.Self;
 
-Terminal.Write(me.GUID.ToString());
+Process.Send(new Message("RegisterKeyEvent", "lpq", me));
+
+Terminal.WriteLine("New shell: "+me.GUID.ToString());
 
 while (true)
 {

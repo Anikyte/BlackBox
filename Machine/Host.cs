@@ -11,6 +11,8 @@ public static class Host
 
 	public static Random Random = new(1569285326);
 	
+	private static Dictionary<SubProcess, string> KeyEventListeners = new();
+	
 	static Host()
 	{
 		Device.Initialize();
@@ -39,7 +41,33 @@ public static class Host
 
 	public static void Loop()
 	{
-		Shell.ProcessInput();
+		
+
+		if (Process.Messages.TryDequeue(out var message))
+		{
+			if (message.Key == "RegisterKeyEvent" && message.SubProcess != null)
+			{
+				KeyEventListeners.Add(message.SubProcess, message.Value);
+				System.Terminal.WriteLine("Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
+			}
+		}
+
+		int key = Window.Terminal.GetCharPressed();
+		if (key > 0)
+		{
+			char c = (char)key;
+			Console.WriteLine("Detected keypress: "+c);
+			foreach (KeyValuePair<SubProcess, string> kvp in KeyEventListeners)
+			{
+				if (kvp.Value.Contains(c))
+				{
+					System.Terminal.WriteLine("Sending KeyEvent to "+kvp.Key.GUID+" for "+c);
+					Process.Send(kvp.Key, new Message("KeyEvent", c.ToString()));
+				}
+			}
+		}
+		Shell.ProcessInput(); //temp
+		
 		foreach (Device device in Device.Devices)
 		{
 			device.Loop(deltaTime); //todo: consider fixed point decimal
