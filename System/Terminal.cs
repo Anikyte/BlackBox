@@ -1,65 +1,129 @@
-using Window = global::BlackBox.Window;
+using System.Numerics;
 
 namespace System;
 
-/// <summary>
-/// Terminal userspace API for writing to the terminal window
-/// </summary>
-
-//todo: unify with BlackBox/Terminal.cs?
 public static class Terminal
 {
-	public static int Height = Window.Terminal.Height;
-	public static int Width = Window.Terminal.Width;
+	public static int Width { get; private set; } = 80;
+	public static int Height { get; private set; } = 25;
 
-	public static (byte r, byte g, byte b) ColorFg = Window.Terminal.CurrentFg;
-	public static (byte r, byte g, byte b) ColorBg = Window.Terminal.CurrentBg;
-	
-	/// <summary>
-	/// Write text to the terminal window
-	/// </summary>
-	public static void Write(string text)
+	private static char[,] _buffer = new char[Height, Width];
+	private static (byte r, byte g, byte b)[,] _fgColors = new (byte, byte, byte)[Height, Width];
+	private static (byte r, byte g, byte b)[,] _bgColors = new (byte, byte, byte)[Height, Width];
+
+	public static (byte r, byte g, byte b) DefaultFg = (255, 255, 255);
+	public static (byte r, byte g, byte b) DefaultBg = (0, 0, 0);
+	public static (byte r, byte g, byte b) ColorFg = (255, 255, 255);
+	public static (byte r, byte g, byte b) ColorBg = (0, 0, 0);
+
+	public static int CursorX;
+	public static int CursorY;
+
+	static Terminal() => Clear();
+
+	// === Core Grid Operations ===
+
+	public static void SetChar(int x, int y, char c)
 	{
-		Window.Terminal.Write(text);
+		if (x < 0 || x >= Width || y < 0 || y >= Height) return;
+		_buffer[y, x] = c;
+		_fgColors[y, x] = ColorFg;
+		_bgColors[y, x] = ColorBg;
 	}
 
-	/// <summary>
-	/// Write line to the terminal window
-	/// </summary>
-	public static void WriteLine(string text)
+	public static void SetChar(Vector2 pos, char c) => SetChar((int)pos.X, (int)pos.Y, c);
+
+	public static char GetChar(int x, int y) =>
+		(x < 0 || x >= Width || y < 0 || y >= Height) ? ' ' : _buffer[y, x];
+
+	public static char GetChar(Vector2 pos) => GetChar((int)pos.X, (int)pos.Y);
+
+	public static void SetRow(int y, string text, int startX = 0)
 	{
-		Window.Terminal.Write(text + "\n");
+		if (y < 0 || y >= Height) return;
+		for (int i = 0; i < text.Length && startX + i < Width; i++)
+			if (startX + i >= 0) SetChar(startX + i, y, text[i]);
 	}
 
-	/// <summary>
-	/// Clear the terminal screen
-	/// </summary>
+	public static void SetRow(Vector2 pos, string text) => SetRow((int)pos.Y, text, (int)pos.X);
+
+	public static void SetColumn(int x, string text, int startY = 0)
+	{
+		if (x < 0 || x >= Width) return;
+		for (int i = 0; i < text.Length && startY + i < Height; i++)
+			if (startY + i >= 0) SetChar(x, startY + i, text[i]);
+	}
+
+	public static void SetColumn(Vector2 pos, string text) => SetColumn((int)pos.X, text, (int)pos.Y);
+
+	public static string GetRow(int y)
+	{
+		if (y < 0 || y >= Height) return new string(' ', Width);
+		char[] row = new char[Width];
+		for (int x = 0; x < Width; x++) row[x] = _buffer[y, x];
+		return new string(row);
+	}
+
+	public static string GetColumn(int x)
+	{
+		if (x < 0 || x >= Width) return new string(' ', Height);
+		char[] col = new char[Height];
+		for (int y = 0; y < Height; y++) col[y] = _buffer[y, x];
+		return new string(col);
+	}
+
 	public static void Clear()
 	{
-		Window.Terminal.Clear();
+		for (int y = 0; y < Height; y++)
+		{
+			for (int x = 0; x < Width; x++)
+			{
+				_buffer[y, x] = ' ';
+				_fgColors[y, x] = DefaultFg;
+				_bgColors[y, x] = DefaultBg;
+			}
+		}
+		CursorX = 0;
+		CursorY = 0;
 	}
 
-	/// <summary>
-	/// Set cursor position in the terminal
-	/// </summary>
-	public static void SetCursorPosition(int x, int y)
-	{
-		global::BlackBox.Terminal terminal = Window.Terminal;
-		terminal.CursorX = Math.Clamp(x, 0, terminal.Width - 1);
-		terminal.CursorY = Math.Clamp(y, 0, terminal.Height - 1);
-	}
+	public static (byte r, byte g, byte b) GetForegroundColor(int x, int y) =>
+		(x < 0 || x >= Width || y < 0 || y >= Height) ? DefaultFg : _fgColors[y, x];
 
-	/// <summary>
-	/// Reset colors to default
-	/// </summary>
+	public static (byte r, byte g, byte b) GetBackgroundColor(int x, int y) =>
+		(x < 0 || x >= Width || y < 0 || y >= Height) ? DefaultBg : _bgColors[y, x];
+
 	public static void ResetColors()
 	{
-		Window.Terminal.CurrentFg = Window.Terminal.DefaultFg;
-		Window.Terminal.CurrentBg = Window.Terminal.DefaultBg;
+		ColorFg = DefaultFg;
+		ColorBg = DefaultBg;
 	}
 
-	/// <summary>
-	/// Get character at position
-	/// </summary>
-	public static char GetChar(int x, int y) => Window.Terminal.GetChar(x, y);
+	// === Compatibility Shim (deprecated) ===
+
+	[Obsolete("Use SetRow or SetChar instead")]
+	public static void Write(string text)
+	{
+		foreach (char c in text)
+		{
+			if (c == '\n')
+			{
+				CursorX = 0;
+				CursorY = (CursorY + 1) % Height;
+			}
+			else
+			{
+				SetChar(CursorX, CursorY, c);
+				CursorX++;
+				if (CursorX >= Width)
+				{
+					CursorX = 0;
+					CursorY = (CursorY + 1) % Height;
+				}
+			}
+		}
+	}
+
+	[Obsolete("Use SetRow or SetChar instead")]
+	public static void WriteLine(string text) => Write(text + "\n");
 }

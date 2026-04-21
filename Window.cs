@@ -2,7 +2,6 @@ using BlackBox.Machine;
 using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace BlackBox;
 
@@ -28,8 +27,6 @@ public class Window : Game
 	private Texture2D? pixelTexture;
 	private DynamicSpriteFont? font;
 	private FontSystem? fontSystem;
-
-	public static Terminal Terminal = new Terminal(TERMINAL_WIDTH, TERMINAL_HEIGHT);
 
 	private int charWidth = 8;
 	private int charHeight = FONT_SIZE;
@@ -60,7 +57,7 @@ public class Window : Game
 
 	protected override void Initialize()
 	{
-		Terminal.InitializeInput(Window);
+		Input.Initialize(Window);
 		base.Initialize();
 	}
 
@@ -107,26 +104,9 @@ public class Window : Game
 
 	protected override void Update(GameTime gameTime)
 	{
-		Terminal.UpdateInput(gameTime);
-		ProcessScrolling();
+		Input.Update(gameTime);
 		Host.Loop();
 		base.Update(gameTime);
-	}
-
-	private void ProcessScrolling()
-	{
-		if (Terminal.IsKeyPressed(Keys.PageUp))
-			Terminal.PageUp();
-		else if (Terminal.IsKeyPressed(Keys.PageDown))
-			Terminal.PageDown();
-
-		if (Terminal.IsKeyDown(Keys.LeftControl) || Terminal.IsKeyDown(Keys.RightControl))
-		{
-			if (Terminal.IsKeyPressed(Keys.Up))
-				Terminal.PageUp();
-			else if (Terminal.IsKeyPressed(Keys.Down))
-				Terminal.PageDown();
-		}
 	}
 
 	protected override void Draw(GameTime gameTime)
@@ -144,13 +124,13 @@ public class Window : Game
 		GraphicsDevice.SetRenderTarget(MainPanel);
 		GraphicsDevice.Clear(Color.Black);
 		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-		for (int y = 0; y < Terminal.Height; y++)
+		for (int y = 0; y < System.Terminal.Height; y++)
 		{
-			for (int x = 0; x < Terminal.Width; x++)
+			for (int x = 0; x < System.Terminal.Width; x++)
 			{
-				var bgColor = Terminal.GetBackgroundColor(x, y);
-				var fgColor = Terminal.GetForegroundColor(x, y);
-				var ch = Terminal.GetChar(x, y);
+				var bgColor = System.Terminal.GetBackgroundColor(x, y);
+				var fgColor = System.Terminal.GetForegroundColor(x, y);
+				var ch = System.Terminal.GetChar(x, y);
 				int posX = x * charWidth;
 				int posY = y * charHeight;
 
@@ -167,13 +147,9 @@ public class Window : Game
 		}
 		if (showCursor)
 		{
-			int cursorScreenY = Terminal.CursorY - Terminal.ViewportOffset;
-			if (cursorScreenY >= 0 && cursorScreenY < Terminal.Height)
-			{
-				spriteBatch.Draw(pixelTexture,
-					new Rectangle(Terminal.CursorX * charWidth, (cursorScreenY + 1) * charHeight - 5, charWidth, 2),
-					Color.White);
-			}
+			spriteBatch.Draw(pixelTexture,
+				new Rectangle(System.Terminal.CursorX * charWidth, (System.Terminal.CursorY + 1) * charHeight - 5, charWidth, 2),
+				Color.White);
 		}
 		spriteBatch.End();
 

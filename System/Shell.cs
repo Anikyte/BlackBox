@@ -1,6 +1,5 @@
 using System.Reflection;
 using Sandbox = BlackBox.Machine.Sandbox;
-using Window = BlackBox.Window;
 using Path = System.IO.Path;
 
 namespace System;
@@ -57,10 +56,10 @@ public static class Shell
 					.Distinct()
 					.OrderBy(ns => ns);
 
-				Window.Terminal.Write("Available System namespaces:\n");
+				Terminal.Write("Available System namespaces:\n");
 				foreach (var ns in namespaces)
 				{
-					Window.Terminal.Write($"- {ns}\n");
+					Terminal.Write($"- {ns}\n");
 				}
 			}
 			else
@@ -83,9 +82,9 @@ public static class Shell
 					if (t.Namespace != currentNamespace)
 					{
 						currentNamespace = t.Namespace!;
-						Window.Terminal.Write($"{currentNamespace}:\n");
+						Terminal.Write($"{currentNamespace}:\n");
 					}
-					Window.Terminal.Write($"- {t.Name}\n");
+					Terminal.Write($"- {t.Name}\n");
 				}
 			}
 		}
@@ -107,11 +106,11 @@ public static class Shell
 
 			if (type == null)
 			{
-				Window.Terminal.Write($"Class '{className}' not found\n");
+				Terminal.Write($"Class '{className}' not found\n");
 				return;
 			}
 
-			Window.Terminal.Write($"{type.Name}:\n");
+			Terminal.Write($"{type.Name}:\n");
 
 			var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
 				.Where(m => !m.IsSpecialName)
@@ -120,7 +119,7 @@ public static class Shell
 
 			if (methods.Count == 0)
 			{
-				Window.Terminal.Write($"- {type.Name} has no methods\n");
+				Terminal.Write($"- {type.Name} has no methods\n");
 			}
 			
 			var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly )
@@ -129,13 +128,13 @@ public static class Shell
 			
 			if (properties.Count == 0)
 			{
-				Window.Terminal.Write($"- {type.Name} has no properties\n");
+				Terminal.Write($"- {type.Name} has no properties\n");
 			}
 
 			foreach (var prop in properties)
 			{
 				var propType = GetSimpleTypeName(prop.PropertyType);
-				Window.Terminal.Write($"- {prop.Name}: {propType}\n");
+				Terminal.Write($"- {prop.Name}: {propType}\n");
 			}
 
 			foreach (var method in methods)
@@ -143,20 +142,17 @@ public static class Shell
 				var parameters = string.Join(", ", method.GetParameters().Select(p =>
 					$"{GetSimpleTypeName(p.ParameterType)} {p.Name}"));
 				var returnType = GetSimpleTypeName(method.ReturnType);
-				Window.Terminal.Write($"- {method.Name}({parameters}): {returnType}\n");
+				Terminal.Write($"- {method.Name}({parameters}): {returnType}\n");
 			}
 		}
 	}
 	
-	public static void Clear()
-	{
-		Window.Terminal.Clear();
-	}
+	public static void Clear() => Terminal.Clear();
 
 	public static void Reset()
 	{
 		Sandbox.Reset();
-		Window.Terminal.Write("Sandbox state reset\n");
+		Terminal.Write("Sandbox state reset\n");
 	}
 
 	public static void Vars()
@@ -164,14 +160,14 @@ public static class Shell
 		var vars = Sandbox.GetVariables().ToList();
 		if (vars.Count == 0)
 		{
-			Window.Terminal.Write("No variables defined\n");
+			Terminal.Write("No variables defined\n");
 		}
 		else
 		{
-			Window.Terminal.Write("Environment Variables:\n");
+			Terminal.Write("Environment Variables:\n");
 			foreach (var v in vars)
 			{
-				Window.Terminal.Write($"  {v.Name} ({v.Type.Name}) = {v.Value}\n");
+				Terminal.Write($"  {v.Name} ({v.Type.Name}) = {v.Value}\n");
 			}
 		}
 	}
@@ -179,7 +175,7 @@ public static class Shell
 	//File operations
 	public static void Read(string path)
 	{
-		Window.Terminal.Write(new Path(path).Read());
+		Terminal.Write(new Path(path).Read());
 	}
 	public static void Write(string path, string text)
 	{

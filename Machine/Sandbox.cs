@@ -224,13 +224,13 @@ public class SubProcess
 			{
 				var errorMsg = string.Join("\n", ex.Diagnostics);
 				Console.Error.WriteLine($"Compilation Error: {errorMsg}");
-				Window.Terminal.Write($"Compilation Error: {errorMsg}\n");
+				System.Terminal.Write($"Compilation Error: {errorMsg}\n");
 				result = new ScriptExecutionResult { Success = false, Exception = ex, ErrorMessage = errorMsg };
 			}
 			catch (Exception ex)
 			{
 				Console.Error.WriteLine($"Runtime Error: {ex.Message}");
-				Window.Terminal.Write($"Runtime Error: {ex.Message}\n");
+				System.Terminal.Write($"Runtime Error: {ex.Message}\n");
 				result = new ScriptExecutionResult { Success = false, Exception = ex, ErrorMessage = ex.Message };
 			}
 			finally

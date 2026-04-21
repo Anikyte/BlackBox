@@ -25,18 +25,18 @@ public static class Host
 		{
 			if (result.ReturnValue != null)
 			{
-				System.Terminal.Write($"=> {result.ReturnValue}\n");
+				System.Terminal.SetRow(13, $"=> {result.ReturnValue}\n");
 			}
 		}
 		else
 		{
-			System.Terminal.Write($"ShellRC Error: {result.ErrorMessage}\n");
+			System.Terminal.SetRow(13, $"ShellRC Error: {result.ErrorMessage}\n");
 		}
 		// Console.WriteLine(GUID.V4(Random));
 		// Console.WriteLine(GUID.V7(Random));
 		// Console.WriteLine(GUID.V8(Random, 0, 0, 0, 1));
 		
-		Shell.ShowPrompt(); //currently a race condition but will be fixed later when repl is entirely programspace
+		//Shell.ShowPrompt(); //currently a race condition but will be fixed later when repl is entirely programspace
 	}
 
 	public static void Loop()
@@ -48,11 +48,11 @@ public static class Host
 			if (message.Key == "RegisterKeyEvent" && message.SubProcess != null)
 			{
 				KeyEventListeners.Add(message.SubProcess, message.Value);
-				System.Terminal.WriteLine("Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
+				System.Terminal.SetRow(4, "Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
 			}
 		}
 
-		int key = Window.Terminal.GetCharPressed();
+		int key = Input.GetCharPressed();
 		if (key > 0)
 		{
 			char c = (char)key;
@@ -61,12 +61,12 @@ public static class Host
 			{
 				if (kvp.Value.Contains(c))
 				{
-					System.Terminal.WriteLine("Sending KeyEvent to "+kvp.Key.GUID+" for "+c);
+					System.Terminal.SetRow(5, "Sending KeyEvent to "+kvp.Key.GUID+" for "+c);
 					Process.Send(kvp.Key, new Message("KeyEvent", c.ToString()));
 				}
 			}
 		}
-		Shell.ProcessInput(); //temp
+		//Shell.ProcessInput(); //temp
 		
 		foreach (Device device in Device.Devices)
 		{
