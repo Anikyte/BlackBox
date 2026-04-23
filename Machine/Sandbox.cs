@@ -120,7 +120,6 @@ public static class Sandbox
 				try
 				{
 					lock (LoopLock) { Sandbox.loopAction?.Invoke(); }
-					CleanupDeadProcesses();
 				}
 				catch (Exception ex) { Console.Error.WriteLine($"Sandbox loop error: {ex.Message}"); }
 			}
@@ -138,24 +137,26 @@ public static class Sandbox
 	public static async Task WaitForStop() { if (loopTask != null) await loopTask; }
 	public static bool IsRunning => running;
 
-	public static SubProcess Spawn(string code, object? globals = null)
+	public static SubProcess Spawn(string name, string code, object? globals = null)
 	{
-		var process = new SubProcess(code, scriptOptions, globals);
+		var process = new SubProcess(name, code, scriptOptions, globals, SubProcess.DefaultErrorHandler);
 		Processes.Add(process);
 		process.Start();
 		return process;
 	}
 
-	public static async Task<SubProcess?> SpawnFile(string filePath, object? globals = null)
+	internal static SubProcess SpawnInit(string code, object? globals = null)
 	{
-		if (!File.Exists(filePath)) return null;
-		return Spawn(await File.ReadAllTextAsync(filePath), globals);
+		var process = new SubProcess("Init", code, scriptOptions, globals, SubProcess.InitErrorHandler, GUID.V8(Host.Random, 8, 2, 1, 0));
+		Processes.Add(process);
+		process.Start();
+		return process;
 	}
 
-	private static void CleanupDeadProcesses()
+	public static async Task<SubProcess?> SpawnFile(string name, string filePath, object? globals = null)
 	{
-		// ConcurrentBag doesn't support removal, dead processes stay until collection is rebuilt
-		// This is acceptable since processes are short-lived and bag is periodically cleared
+		if (!File.Exists(filePath)) return null;
+		return Spawn(name, await File.ReadAllTextAsync(filePath), globals);
 	}
 }
 
@@ -176,6 +177,8 @@ public class ScriptVariable
 
 public enum ProcessState { Starting, Running, Exited }
 
+public delegate void ProcessErrorHandler(string name, GUID guid, Exception ex, string errorMessage);
+
 public class SubProcess
 {
 	private static readonly AsyncLocal<SubProcess?> current = new();
@@ -186,6 +189,7 @@ public class SubProcess
 	private readonly object? globals;
 	private readonly CancellationTokenSource cts = new();
 	private readonly TaskCompletionSource<ScriptExecutionResult> completionSource = new();
+	private readonly ProcessErrorHandler errorHandler;
 
 	private ProcessState state = ProcessState.Starting;
 	private ScriptExecutionResult? result;
@@ -193,16 +197,33 @@ public class SubProcess
 	private DateTime? endTime;
 
 	public ConcurrentQueue<Message> Messages = new();
+
+	public string Name;
 	public GUID GUID;
 
-	internal SubProcess(string code, ScriptOptions options, object? globals)
+	internal static readonly ProcessErrorHandler DefaultErrorHandler = (name, guid, ex, msg) =>
+	{
+		// Stub: default subprocess error handler
+		Status.Throw(3, guid, name, $"Fatal: {ex}");
+	};
+
+	internal static readonly ProcessErrorHandler InitErrorHandler = (name, guid, ex, msg) =>
+	{
+		// Stub: init process error handler
+		Status.Throw(4, $"[INIT] Fatal: {ex}");
+		System.Terminal.SetRow(3, $"[INIT] Fatal: {msg}");
+	};
+
+	internal SubProcess(string name, string code, ScriptOptions options, object? globals, ProcessErrorHandler errorHandler, GUID? guid = null)
 	{
 		this.code = code;
 		this.options = options;
 		this.globals = globals;
+		this.errorHandler = errorHandler;
 
-		GUID = GUID.V8(new Random(), 0, 2, 0, 0);
-		
+		Name = name;
+		GUID = guid ?? GUID.V8(Host.Random, 0, 2, 0, 0);
+
 		Process.Processes.Add(this);
 	}
 
@@ -223,14 +244,12 @@ public class SubProcess
 			catch (CompilationErrorException ex)
 			{
 				var errorMsg = string.Join("\n", ex.Diagnostics);
-				Console.Error.WriteLine($"Compilation Error: {errorMsg}");
-				System.Terminal.Write($"Compilation Error: {errorMsg}\n");
+				errorHandler(Name, GUID, ex, errorMsg);
 				result = new ScriptExecutionResult { Success = false, Exception = ex, ErrorMessage = errorMsg };
 			}
 			catch (Exception ex)
 			{
-				Console.Error.WriteLine($"Runtime Error: {ex.Message}");
-				System.Terminal.Write($"Runtime Error: {ex.Message}\n");
+				errorHandler(Name, GUID, ex, ex.Message);
 				result = new ScriptExecutionResult { Success = false, Exception = ex, ErrorMessage = ex.Message };
 			}
 			finally

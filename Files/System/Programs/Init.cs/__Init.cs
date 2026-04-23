@@ -1,6 +1,7 @@
 using System.IO;
+using System;
 
-Terminal.WriteLine("Init Loaded");
+Status.Throw(1, Process.Self, "Init Loaded");
 
 Path shell = new Path("System/Programs/Shell.cs");
-Process.Spawn(shell);
+Process.Spawn("Shell", shell);

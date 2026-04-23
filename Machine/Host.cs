@@ -1,4 +1,5 @@
 using System.Peripherals;
+using System.Text.RegularExpressions;
 using System.Utils;
 using DateTime = System.DateTime;
 
@@ -19,36 +20,18 @@ public static class Host
 		Reactor.Initialize(Random, 5, 12, 4, 12);
 		new Chronometer("Chronometer", "Timex", 0x11);
 		
-		// Execute ShellRC.cs initialization
-		var result = Sandbox.Execute(new Path("System/Programs/Init.cs").Read());
-		if (result.Success)
-		{
-			if (result.ReturnValue != null)
-			{
-				System.Terminal.SetRow(13, $"=> {result.ReturnValue}\n");
-			}
-		}
-		else
-		{
-			System.Terminal.SetRow(13, $"ShellRC Error: {result.ErrorMessage}\n");
-		}
-		// Console.WriteLine(GUID.V4(Random));
-		// Console.WriteLine(GUID.V7(Random));
-		// Console.WriteLine(GUID.V8(Random, 0, 0, 0, 1));
-		
-		//Shell.ShowPrompt(); //currently a race condition but will be fixed later when repl is entirely programspace
+		// Execute Init.cs initialization as special init process
+		Sandbox.SpawnInit(new Path("System/Programs/Init.cs").Read());
 	}
 
 	public static void Loop()
 	{
-		
-
 		if (Process.Messages.TryDequeue(out var message))
 		{
 			if (message.Key == "RegisterKeyEvent" && message.SubProcess != null)
 			{
 				KeyEventListeners.Add(message.SubProcess, message.Value);
-				System.Terminal.SetRow(4, "Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
+				Status.Throw(1, "Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
 			}
 		}
 
@@ -56,17 +39,12 @@ public static class Host
 		if (key > 0)
 		{
 			char c = (char)key;
-			Console.WriteLine("Detected keypress: "+c);
 			foreach (KeyValuePair<SubProcess, string> kvp in KeyEventListeners)
 			{
-				if (kvp.Value.Contains(c))
-				{
-					System.Terminal.SetRow(5, "Sending KeyEvent to "+kvp.Key.GUID+" for "+c);
+				if (Regex.IsMatch(c.ToString(), kvp.Value))
 					Process.Send(kvp.Key, new Message("KeyEvent", c.ToString()));
-				}
 			}
 		}
-		//Shell.ProcessInput(); //temp
 		
 		foreach (Device device in Device.Devices)
 		{

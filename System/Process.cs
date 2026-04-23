@@ -12,8 +12,10 @@ public static class Process
 	public static List<SubProcess> Processes = new();
 	public static SubProcess? Self => SubProcess.Current;
 
-	public static SubProcess Spawn(string code) => Sandbox.Spawn(code);
-	public static SubProcess Spawn(Path path) => Sandbox.Spawn(new Path(path).Read());
+	public static SubProcess Spawn(string name, string code) => Sandbox.Spawn(name, code);
+	public static SubProcess Spawn(string name, Path path) => Sandbox.Spawn(name, new Path(path).Read());
+	internal static SubProcess SpawnInit(string code) => Sandbox.SpawnInit(code);
+	internal static SubProcess SpawnInit(Path path) => Sandbox.SpawnInit(new Path(path).Read());
 	public static SubProcess? Get(GUID guid) => Processes.Find(p => p.GUID == guid);
 	public static SubProcess? Get(string guid) => Processes.Find(p => p.GUID.ToString() == guid);
 
