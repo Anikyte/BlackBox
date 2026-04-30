@@ -14,6 +14,9 @@ Console.Write and Status.Throw will log to standard output
 **Hostspace**
 - the systems that run userspace
 - found in `Machine`
+- Host.cs handles IPC messages and general kernel logic that doesn't fit elsewhere
+- Sandbox.cs handles the roslyn sandbox
+- Ship.cs and World.cs handle gameplay systems
 
 **Userspace**
 - user accessible system types
@@ -23,7 +26,7 @@ Console.Write and Status.Throw will log to standard output
 
 **Programspace**
 - code compiled at runtime within the virtual machine
-- programs, user data, puzzles, etc
+- programs, user data, puzzles, the shell, etc
 
 **Filesystem**
 - custom 'filesystem' implementation over top of user filesystem

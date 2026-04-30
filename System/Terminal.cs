@@ -21,6 +21,7 @@ public static class Terminal
 	public static int CursorY;
 	
 	internal static List<SubProcess> ClearEventListeners = new();
+	internal static List<SubProcess> WriteEventListeners = new();
 
 	static Terminal() => Clear();
 
@@ -107,31 +108,13 @@ public static class Terminal
 		ColorBg = DefaultBg;
 	}
 
-	// === Compatibility Shim (deprecated) ===
+	// === IPC-based Write ===
 
-	[Obsolete("Use SetRow or SetChar instead")]
 	public static void Write(string text)
 	{
-		foreach (char c in text)
-		{
-			if (c == '\n')
-			{
-				CursorX = 0;
-				CursorY = (CursorY + 1) % Height;
-			}
-			else
-			{
-				SetChar(CursorX, CursorY, c);
-				CursorX++;
-				if (CursorX >= Width)
-				{
-					CursorX = 0;
-					CursorY = (CursorY + 1) % Height;
-				}
-			}
-		}
+		foreach (SubProcess process in WriteEventListeners)
+			Process.Send(process, new Message("WriteEvent", text));
 	}
 
-	[Obsolete("Use SetRow or SetChar instead")]
 	public static void WriteLine(string text) => Write(text + "\n");
 }

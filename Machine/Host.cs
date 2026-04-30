@@ -35,9 +35,10 @@ public static class Host
 				Status.Throw(1, "Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
 			}
 
-			if (message.Key == "RegisterShellEvent" && message.Value == "Clear" && message.SubProcess != null)
+			if (message.Key == "RegisterShellEvent" && message.SubProcess != null)
 			{
-				Terminal.ClearEventListeners.Add(message.SubProcess);
+				if (message.Value == "Clear") Terminal.ClearEventListeners.Add(message.SubProcess);
+				else if (message.Value == "Write") Terminal.WriteEventListeners.Add(message.SubProcess);
 				Status.Throw(1, "Registered ShellEvent for "+message.SubProcess.GUID.ToString()+" of type "+message.Value);
 			}
 		}

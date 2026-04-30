@@ -5,13 +5,15 @@ var me = Process.Self;
 
 public List<string> backBuffer = new();
 private string buffer = "";
-private int lineIndex = 5;
+private int lineIndex = 2;
 
 Status.Throw(1, me, "New shell: " + me.GUID.ToString());
+Terminal.SetRow(1, $"{Process.Self.Name} [1]: New shell: " + me.GUID.ToString()); //temp
 
 Keys[] prevKeys = [];
 
 Process.Send(new Message("RegisterShellEvent", "Clear", me));
+Process.Send(new Message("RegisterShellEvent", "Write", me));
 //todo: implement
 // bool success = false;
 // //wait 10ms
@@ -71,26 +73,36 @@ while (true)
 		else if (key == Keys.Enter) { backBuffer.Append(buffer); ExecuteBuffer(); }
 	}
 	
-	if (me.Messages.TryDequeue(out var message))
+	while (me.Messages.TryDequeue(out var message))
 	{
-		if (message.Key == "ClearEvent")
+		if (message.Key == "ClearEvent") lineIndex = 0;
+		else if (message.Key == "WriteEvent")
 		{
-			lineIndex = 0;
+			RenderWrapped(lineIndex, message.Value);
+			lineIndex += (message.Value.Length + Terminal.Width - 1) / Terminal.Width;
 		}
 	}
 
 	prevKeys = keys;
-	Terminal.SetRow(lineIndex, "> "+buffer+"_");
+	RenderWrapped(lineIndex, "> " + buffer + "_");
 }
 
 Terminal.SetRow(lineIndex, "Shell complete");
 
+void RenderWrapped(int startRow, string text)
+{
+	int w = Terminal.Width;
+	for (int i = 0; i * w < text.Length; i++)
+		Terminal.SetRow(startRow + i, text.Substring(i * w, Math.Min(w, text.Length - i * w)));
+}
+
 void ExecuteBuffer()
 {
-	Terminal.SetRow(lineIndex, "> "+buffer);
+	string prompt = "> " + buffer;
+	RenderWrapped(lineIndex, prompt);
+	lineIndex += (prompt.Length + Terminal.Width - 1) / Terminal.Width;
 	var result = Process.Execute(buffer);
-	lineIndex++;
-	Terminal.SetRow(lineIndex, result.Item2);
-	lineIndex++;
+	RenderWrapped(lineIndex, result.Item2);
+	lineIndex += (result.Item2.Length + Terminal.Width - 1) / Terminal.Width;
 	buffer = "";
 }
