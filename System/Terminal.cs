@@ -5,12 +5,26 @@ namespace System;
 
 public static class Terminal
 {
-	public static int Width { get; private set; } = 80;
-	public static int Height { get; private set; } = 25;
+	public static int Width { get; private set; } = 100;
 
-	private static char[,] _buffer = new char[Height, Width];
-	private static (byte r, byte g, byte b)[,] _fgColors = new (byte, byte, byte)[Height, Width];
-	private static (byte r, byte g, byte b)[,] _bgColors = new (byte, byte, byte)[Height, Width];
+	private static int _height = 25;
+	public static int Height
+	{
+		get => _height;
+		internal set
+		{
+			if (value == _height) return;
+			_height = value;
+			_buffer = new char[_height, Width];
+			_fgColors = new (byte, byte, byte)[_height, Width];
+			_bgColors = new (byte, byte, byte)[_height, Width];
+			Clear();
+		}
+	}
+
+	private static char[,] _buffer = new char[25, Width];
+	private static (byte r, byte g, byte b)[,] _fgColors = new (byte, byte, byte)[25, Width];
+	private static (byte r, byte g, byte b)[,] _bgColors = new (byte, byte, byte)[25, Width];
 
 	public static (byte r, byte g, byte b) DefaultFg = (255, 255, 255);
 	public static (byte r, byte g, byte b) DefaultBg = (0, 0, 0);

@@ -14,27 +14,24 @@ namespace BlackBox;
 /// </summary>
 public class Window : Game
 {
-	private const int TERMINAL_WIDTH = 80;
-	private const int TERMINAL_HEIGHT = 25;
 	private const string TITLE = "Black Box";
 	private const string FONT_PATH = "./JetBrainsMono-Regular.ttf";
-	private const int FONT_SIZE = 24;
-	private const float CURSOR_BLINK_RATE = 0.5f;
 
 	public static int Gap = 6;
+	public static int CharSpacingH = -1;
+	public static int CharSpacingV = 3;
 
 	private readonly GraphicsDeviceManager graphics;
 	private SpriteBatch? spriteBatch;
 	private Texture2D? pixelTexture;
-	private DynamicSpriteFont? font;
 	private FontSystem? fontSystem;
+	private DynamicSpriteFont? font;
 
-	private int charWidth = 8;
-	private int charHeight = FONT_SIZE;
-	private int windowWidth;
-	private int windowHeight;
-	private bool showCursor = true;
-	private float cursorBlinkTime;
+	private int charWidth;
+	private int charHeight;
+	private int cellWidth;
+	private int cellHeight;
+	private float fontWidthPerSize;
 	
 	public static Rectangle MainPanelRectangle;
 	public static Rectangle BitmapPanelRectangle;
@@ -66,41 +63,55 @@ public class Window : Game
 	{
 		spriteBatch = new SpriteBatch(GraphicsDevice);
 
-		// Load font using FontStashSharp
-		if (File.Exists(FONT_PATH))
-		{
-			fontSystem = new FontSystem();
-			fontSystem.AddFont(File.ReadAllBytes(FONT_PATH));
-			font = fontSystem.GetFont(charHeight);
-		}
-		else
+		if (!File.Exists(FONT_PATH))
 		{
 			Console.WriteLine("Could not find font file: " + FONT_PATH);
-			// Fallback: we'd need a default font - for now just exit
 			Exit();
 			return;
 		}
 
-		// Measure character dimensions
-		var testSize = font.MeasureString("M");
-		charWidth = (int)testSize.X;
-		
-		// Calculate window size
-		windowWidth = TERMINAL_WIDTH * charWidth;
-		windowHeight = (TERMINAL_HEIGHT + 1) * charHeight;
+		fontSystem = new FontSystem();
+		fontSystem.AddFont(File.ReadAllBytes(FONT_PATH));
 
-		graphics.PreferredBackBufferWidth = windowWidth + Gap + 300;
-		graphics.PreferredBackBufferHeight = windowHeight;
+		// Measure font dimensions at reference size to get scaling ratio
+		var refFont = fontSystem.GetFont(100);
+		var refSize = refFont.MeasureString("M");
+		fontWidthPerSize = refSize.X / 100f;
+
+		// Initial sizing
+		graphics.PreferredBackBufferWidth = 1280;
+		graphics.PreferredBackBufferHeight = 720;
 		graphics.ApplyChanges();
 
-		MainPanel = new RenderTarget2D(GraphicsDevice, windowWidth, windowHeight);
+		RecalculateTerminal();
+
+		MainPanel = new RenderTarget2D(GraphicsDevice, System.Terminal.Width * cellWidth, System.Terminal.Height * cellHeight);
 		BitmapPanel = new RenderTarget2D(GraphicsDevice, 256, 256);
 		FilePanel = new RenderTarget2D(GraphicsDevice, 256, 256);
 		Background = new RenderTarget2D(GraphicsDevice, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
 
-		// Create 1x1 white pixel for rectangle drawing
 		pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
 		pixelTexture.SetData(new[] { Color.White });
+	}
+
+	private void RecalculateTerminal()
+	{
+		Recalculate(Window.ClientBounds.Width, Window.ClientBounds.Height);
+
+		// Calculate cell size to fit Terminal.Width columns in main panel
+		cellWidth = MainPanelRectangle.Width / System.Terminal.Width;
+		charWidth = cellWidth - CharSpacingH;
+
+		// Calculate font size from desired character width
+		int fontSize = (int)(charWidth / fontWidthPerSize);
+		font = fontSystem?.GetFont(fontSize);
+
+		// Measure actual character height from font
+		var measured = font?.MeasureString("M") ?? new System.Numerics.Vector2(charWidth, charWidth);
+		charHeight = (int)measured.Y;
+		cellHeight = charHeight + CharSpacingV;
+
+		System.Terminal.Height = MainPanelRectangle.Height / cellHeight;
 	}
 
 	protected override void Update(GameTime gameTime)
@@ -115,7 +126,7 @@ public class Window : Game
 		if (spriteBatch == null || pixelTexture == null || font == null)
 			return;
 
-		Recalculate(Window.ClientBounds.Width, Window.ClientBounds.Height);
+		RecalculateTerminal();
 
 		// --- Background ---
 		GraphicsDevice.SetRenderTarget(Background);
@@ -132,10 +143,10 @@ public class Window : Game
 				var bgColor = System.Terminal.GetBackgroundColor(x, y);
 				var fgColor = System.Terminal.GetForegroundColor(x, y);
 				var ch = System.Terminal.GetChar(x, y);
-				int posX = x * charWidth;
-				int posY = y * charHeight;
+				int posX = x * cellWidth;
+				int posY = y * cellHeight;
 
-				spriteBatch.Draw(pixelTexture, new Rectangle(posX, posY, charWidth, charHeight), new Color(bgColor.r, bgColor.g, bgColor.b));
+				spriteBatch.Draw(pixelTexture, new Rectangle(posX, posY, cellWidth, cellHeight), new Color(bgColor.r, bgColor.g, bgColor.b));
 				if (ch != ' ')
 					spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
 			}
