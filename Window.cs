@@ -24,6 +24,7 @@ public class Window : Game
 	private readonly GraphicsDeviceManager graphics;
 	private SpriteBatch? spriteBatch;
 	private Texture2D? pixelTexture;
+	private Texture2D? bitmapTexture;
 	private FontSystem? fontSystem;
 	private DynamicSpriteFont? font;
 
@@ -92,6 +93,9 @@ public class Window : Game
 
 		pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
 		pixelTexture.SetData(new[] { Color.White });
+
+		bitmapTexture = new Texture2D(GraphicsDevice, System.Peripherals.Bitmap.Width, System.Peripherals.Bitmap.Height);
+		System.Peripherals.Bitmap.Clear();
 	}
 
 	private void RecalculateTerminal()
@@ -155,7 +159,11 @@ public class Window : Game
 
 		// --- Bitmap Panel ---
 		GraphicsDevice.SetRenderTarget(BitmapPanel);
-		GraphicsDevice.Clear(Color.Gray);
+		bitmapTexture?.SetData(System.Peripherals.Bitmap.Buffer);
+		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+		if (bitmapTexture != null)
+			spriteBatch.Draw(bitmapTexture, new Rectangle(0, 0, 256, 256), Color.White);
+		spriteBatch.End();
 
 		// --- File Panel ---
 		GraphicsDevice.SetRenderTarget(FilePanel);
@@ -166,8 +174,11 @@ public class Window : Game
 		spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
 		spriteBatch.Draw(Background, BackgroundRectangle, Color.White);
 		spriteBatch.Draw(MainPanel, MainPanelRectangle, Color.White);
-		spriteBatch.Draw(BitmapPanel, BitmapPanelRectangle, Color.White);
 		spriteBatch.Draw(FilePanel, FilePanelRectangle, Color.White);
+		spriteBatch.End();
+		// Bitmap panel with no antialiasing
+		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+		spriteBatch.Draw(BitmapPanel, BitmapPanelRectangle, Color.White);
 		spriteBatch.End();
 
 		base.Draw(gameTime);
