@@ -34,6 +34,12 @@ public static class Host
 				KeyEventListeners.Add(message.SubProcess, message.Value);
 				Status.Throw(1, "Registered KeyEvent for "+message.SubProcess.GUID.ToString()+" for keys "+message.Value);
 			}
+
+			if (message.Key == "RegisterShellEvent" && message.Value == "Clear" && message.SubProcess != null)
+			{
+				Terminal.ClearEventListeners.Add(message.SubProcess);
+				Status.Throw(1, "Registered ShellEvent for "+message.SubProcess.GUID.ToString()+" of type "+message.Value);
+			}
 		}
 
 		int key = Input.GetCharPressed();

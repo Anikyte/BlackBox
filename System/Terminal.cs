@@ -1,4 +1,5 @@
 using System.Numerics;
+using BlackBox.Machine;
 
 namespace System;
 
@@ -18,6 +19,8 @@ public static class Terminal
 
 	public static int CursorX;
 	public static int CursorY;
+	
+	internal static List<SubProcess> ClearEventListeners = new();
 
 	static Terminal() => Clear();
 
@@ -74,6 +77,11 @@ public static class Terminal
 
 	public static void Clear()
 	{
+		foreach (SubProcess process in ClearEventListeners)
+		{
+			Process.Send(process, new Message("ClearEvent", ""));
+		}
+		
 		for (int y = 0; y < Height; y++)
 		{
 			for (int x = 0; x < Width; x++)

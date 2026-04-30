@@ -21,7 +21,15 @@ public static class Process
 
 	public static void Send(SubProcess process, Message message) => process.Messages.Enqueue(message);
 	public static void Send(Message message) => Process.Messages.Enqueue(message); //kernal messages
-	
+
+	public static (bool success, string output) Execute(string code)
+	{
+		var result = Sandbox.Execute(code);
+		return result.Success
+			? (true, result.ReturnValue?.ToString() ?? "")
+			: (false, result.ErrorMessage ?? result.Exception?.ToString() ?? "Unknown error");
+	}
+
 	public static List<int> List() => null;
 	public static void Await(int pid)
 	{

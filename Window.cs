@@ -140,18 +140,6 @@ public class Window : Game
 					spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
 			}
 		}
-		cursorBlinkTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-		if (cursorBlinkTime >= CURSOR_BLINK_RATE)
-		{
-			showCursor = !showCursor;
-			cursorBlinkTime = 0;
-		}
-		if (showCursor)
-		{
-			spriteBatch.Draw(pixelTexture,
-				new Rectangle(System.Terminal.CursorX * charWidth, (System.Terminal.CursorY + 1) * charHeight - 5, charWidth, 2),
-				Color.White);
-		}
 		spriteBatch.End();
 
 		// --- Bitmap Panel ---
