@@ -2,6 +2,7 @@ using BlackBox.Machine;
 using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.IO;
 
 namespace BlackBox;
 

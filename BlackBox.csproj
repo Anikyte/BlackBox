@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <Compile Include="Files\System\Programs\IPC.cs\__IPC.cs" />
+        <Compile Include="Files\System\Programs\sh.cs\sh.cs" />
         <None Update="JetBrainsMono-Regular.ttf">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>

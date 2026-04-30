@@ -4,8 +4,15 @@ using Path = System.IO.Path;
 
 namespace System;
 
-public static class Shell
+public static class System
 {
+	//todo: important: public static Cite(Path path)
+	//should compile a c# file and then connect it to the process that called it so that its contents may be accessed with `using`
+	//so something like
+	//```System.Cite("User/MathLib.cs");
+	//using MathLib;```
+	//alternatively, we add a precompiler to executed scripts that searches for using statements with paths and pulls in the relevant file but that seems so open to jank
+	
 	private static string GetSimpleTypeName(Type type)
 	{
 		if (type == typeof(void)) return "void";
@@ -68,10 +75,10 @@ public static class Shell
 				IEnumerable<Type> systemTypes = show switch
 				{
 					"simple" => allTypes.Where(t =>
-						t.Assembly == typeof(Shell).Assembly && t.Namespace.StartsWith("System")),
+						t.Assembly == typeof(System).Assembly && t.Namespace.StartsWith("System")),
 					"all" => allTypes.Where(t => t.Namespace.StartsWith("System")),
 					_ => allTypes.Where(t =>
-						t.Assembly == typeof(Shell).Assembly && t.Namespace.StartsWith("System"))
+						t.Assembly == typeof(System).Assembly && t.Namespace.StartsWith("System"))
 				};
 
 				systemTypes = systemTypes.OrderBy(t => t.Namespace).ThenBy(t => t.Name).ToList();
@@ -147,14 +154,6 @@ public static class Shell
 		}
 	}
 	
-	public static void Clear() => Terminal.Clear();
-
-	public static void Reset()
-	{
-		Sandbox.Reset();
-		Terminal.Write("Sandbox state reset\n");
-	}
-
 	public static void Vars()
 	{
 		var vars = Sandbox.GetVariables().ToList();
@@ -170,16 +169,6 @@ public static class Shell
 				Terminal.Write($"  {v.Name} ({v.Type.Name}) = {v.Value}\n");
 			}
 		}
-	}
-	
-	//File operations
-	public static void Read(string path)
-	{
-		Terminal.Write(new Path(path).Read());
-	}
-	public static void Write(string path, string text)
-	{
-		new Path(path).Write(text);
 	}
 
 	public static void Execute(string path)

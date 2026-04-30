@@ -41,8 +41,8 @@ public static class Terminal
 	public static void SetRow(int y, string text, int startX = 0)
 	{
 		if (y < 0 || y >= Height) return;
-		for (int i = 0; i < text.Length && startX + i < Width; i++)
-			if (startX + i >= 0) SetChar(startX + i, y, text[i]);
+		for (int x = startX; x < Width; x++)
+			if (x >= 0) SetChar(x, y, x - startX < text.Length ? text[x - startX] : ' ');
 	}
 
 	public static void SetRow(Vector2 pos, string text) => SetRow((int)pos.Y, text, (int)pos.X);
@@ -50,8 +50,8 @@ public static class Terminal
 	public static void SetColumn(int x, string text, int startY = 0)
 	{
 		if (x < 0 || x >= Width) return;
-		for (int i = 0; i < text.Length && startY + i < Height; i++)
-			if (startY + i >= 0) SetChar(x, startY + i, text[i]);
+		for (int y = startY; y < Height; y++)
+			if (y >= 0) SetChar(x, y, y - startY < text.Length ? text[y - startY] : ' ');
 	}
 
 	public static void SetColumn(Vector2 pos, string text) => SetColumn((int)pos.X, text, (int)pos.Y);

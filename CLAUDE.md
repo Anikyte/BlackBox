@@ -1,11 +1,14 @@
 This project is a video game emulating a full and novel C# based computer system.  
 
-- prioritize static classes
-- no single use functions
-- code should be as concise as possible
-- Don't use dedicated setter functions. Use properties.
-- Use as few variables as necessary. It is better to compute a value than to store it.
+- Prioritize static classes
+- No single use functions
+- Code should be as concise as possible
+- Don't use dedicated setter functions. Use properties
+- Use as few variables as necessary. It is better to compute a value than to store it
 - Always give a summary of what you've changed
+
+If needed, tests may be added to Files/System/Programs/Init.cs/__Init.cs
+Console.Write and Status.Throw will log to standard output
 
 ## Architecture
 **Hostspace**

@@ -63,7 +63,7 @@ public class GUID
         return new GUID(bytes);
     }
 
-    public Int128 ToUInt() => System.Buffers.Binary.BinaryPrimitives.ReadInt128BigEndian(_bytes);
+    public Int128 ToUInt() => global::System.Buffers.Binary.BinaryPrimitives.ReadInt128BigEndian(_bytes);
     public string ToHex() => $"{_bytes[0]:x2}{_bytes[1]:x2}{_bytes[2]:x2}{_bytes[3]:x2}-{_bytes[4]:x2}{_bytes[5]:x2}-{_bytes[6]:x2}{_bytes[7]:x2}-{_bytes[8]:x2}{_bytes[9]:x2}-{_bytes[10]:x2}{_bytes[11]:x2}{_bytes[12]:x2}{_bytes[13]:x2}{_bytes[14]:x2}{_bytes[15]:x2}";
     public byte[] ToByteArray() => (byte[])_bytes.Clone();
     public override string ToString() => ToHex();
@@ -71,8 +71,8 @@ public class GUID
     public int Version => (_bytes[6] >> 4) & 0x0F;
     public int Variant => _bytes[8] >> 6;
 
-    public uint High => System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(_bytes);
-    public ushort Low => System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(_bytes.AsSpan(4));
+    public uint High => global::System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(_bytes);
+    public ushort Low => global::System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(_bytes.AsSpan(4));
     public byte Family => _bytes[7];
     public byte Node => _bytes[9];
 
