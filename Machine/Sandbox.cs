@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System.Reflection;
@@ -20,9 +22,13 @@ public static class Sandbox
 
 	public static readonly ConcurrentBag<SubProcess> Processes = new();
 
+	private const string LibrariesPath = "./Files/System/Libraries";
+	private static SandboxAssemblyBuilder assemblyBuilder = null!;
+	private static string libraryCode = "";
+
 	static Sandbox()
 	{
-		var assemblyBuilder = new SandboxAssemblyBuilder();
+		assemblyBuilder = new SandboxAssemblyBuilder();
 		assemblyBuilder.BuildSandboxAssembly();
 
 		scriptOptions = ScriptOptions.Default
@@ -30,6 +36,72 @@ public static class Sandbox
 			.WithImports("System", "System.Collections.Generic", "System.Linq", "System.Text")
 			.WithAllowUnsafe(false)
 			.WithCheckOverflow(true);
+
+		InitializeLibraries();
+	}
+
+	private static string? LoadLibraryCode()
+	{
+		Console.WriteLine($"[Sandbox] Looking for libraries in: {LibrariesPath}");
+
+		if (!Directory.Exists(LibrariesPath))
+		{
+			Console.WriteLine($"[Sandbox] Libraries directory does not exist");
+			return null;
+		}
+
+		var dirs = Directory.GetDirectories(LibrariesPath);
+		Console.WriteLine($"[Sandbox] Found {dirs.Length} library directories");
+
+		var allCode = new System.Text.StringBuilder();
+		foreach (var dir in dirs)
+		{
+			var dirName = dir.Split('/').Last();
+			var srcFile = $"{dir}/__{dirName}";
+			Console.WriteLine($"[Sandbox] Checking: {srcFile} (exists: {File.Exists(srcFile)})");
+			if (File.Exists(srcFile))
+			{
+				var code = File.ReadAllText(srcFile);
+				Console.WriteLine($"[Sandbox] Loaded '{dirName}' ({code.Length} chars)");
+				allCode.AppendLine(code);
+			}
+		}
+		return allCode.Length > 0 ? allCode.ToString() : null;
+	}
+
+	public static void InitializeLibraries()
+	{
+		Console.WriteLine("[Sandbox] InitializeLibraries called");
+		var libCode = LoadLibraryCode();
+		if (libCode == null)
+		{
+			Console.WriteLine("[Sandbox] No library code to load");
+			return;
+		}
+
+		libraryCode = libCode;
+		Console.WriteLine($"[Sandbox] Stored {libraryCode.Length} chars of library code for subprocesses");
+
+		Console.WriteLine($"[Sandbox] Executing library code into main state...");
+
+		StateLock.EnterWriteLock();
+		try
+		{
+			var script = CSharpScript.Create(libCode, scriptOptions);
+			currentState = script.RunAsync().Result;
+			Console.WriteLine($"[Sandbox] Libraries loaded successfully. Variables defined: {currentState.Variables.Length}");
+			foreach (var v in currentState.Variables)
+				Console.WriteLine($"[Sandbox]   - {v.Name}: {v.Type.Name}");
+		}
+		catch (CompilationErrorException ex)
+		{
+			Console.Error.WriteLine($"[Sandbox] Failed to load libraries: {string.Join("\n", ex.Diagnostics)}");
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"[Sandbox] Failed to load libraries: {ex.Message}");
+		}
+		finally { StateLock.ExitWriteLock(); }
 	}
 
 	public static ScriptExecutionResult Execute(string code, object? globals = null, CancellationToken cancellationToken = default)
@@ -139,7 +211,7 @@ public static class Sandbox
 
 	public static SubProcess Spawn(string name, string code, object? globals = null)
 	{
-		var process = new SubProcess(name, code, scriptOptions, globals, SubProcess.DefaultErrorHandler);
+		var process = new SubProcess(name, code, scriptOptions, globals, SubProcess.DefaultErrorHandler, libraryCode);
 		Processes.Add(process);
 		process.Start();
 		return process;
@@ -147,7 +219,7 @@ public static class Sandbox
 
 	internal static SubProcess SpawnInit(string code, object? globals = null)
 	{
-		var process = new SubProcess("Init", code, scriptOptions, globals, SubProcess.InitErrorHandler, GUID.V8(Host.Random, 8, 2, 1, 0));
+		var process = new SubProcess("Init", code, scriptOptions, globals, SubProcess.InitErrorHandler, libraryCode, GUID.V8(Host.Random, 8, 2, 1, 0));
 		Processes.Add(process);
 		process.Start();
 		return process;
@@ -185,6 +257,7 @@ public class SubProcess
 	public static SubProcess? Current => current.Value;
 
 	private readonly string code;
+	private readonly string libraryCode;
 	private readonly ScriptOptions options;
 	private readonly object? globals;
 	private readonly CancellationTokenSource cts = new();
@@ -214,9 +287,10 @@ public class SubProcess
 		System.Terminal.SetRow(3, $"[INIT] Fatal: {msg}");
 	};
 
-	internal SubProcess(string name, string code, ScriptOptions options, object? globals, ProcessErrorHandler errorHandler, GUID? guid = null)
+	internal SubProcess(string name, string code, ScriptOptions options, object? globals, ProcessErrorHandler errorHandler, string libraryCode = "", GUID? guid = null)
 	{
 		this.code = code;
+		this.libraryCode = libraryCode;
 		this.options = options;
 		this.globals = globals;
 		this.errorHandler = errorHandler;
@@ -237,8 +311,22 @@ public class SubProcess
 			current.Value = this;
 			try
 			{
-				var script = CSharpScript.Create(code, options, globals?.GetType());
-				var scriptState = await script.RunAsync(globals, cts.Token);
+				ScriptState scriptState;
+
+				// Execute library code first if present
+				if (!string.IsNullOrEmpty(libraryCode))
+				{
+					var libScript = CSharpScript.Create(libraryCode, options);
+					scriptState = await libScript.RunAsync(cancellationToken: cts.Token);
+					// Continue with main code from library state
+					scriptState = await scriptState.ContinueWithAsync(code, cancellationToken: cts.Token);
+				}
+				else
+				{
+					var script = CSharpScript.Create(code, options, globals?.GetType());
+					scriptState = await script.RunAsync(globals, cts.Token);
+				}
+
 				result = new ScriptExecutionResult { Success = true, ReturnValue = scriptState.ReturnValue };
 			}
 			catch (CompilationErrorException ex)

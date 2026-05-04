@@ -38,7 +38,7 @@ Process.Send(new Message("RegisterShellEvent", "Write", me));
 // {
 // 	throw new Exception("Shell failed to establish IPC link with kernel!");
 // }
-
+Terminux.BPrint();
 while (true)
 {
 	var keys = Input.Pressed;

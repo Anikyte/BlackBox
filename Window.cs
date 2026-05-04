@@ -80,8 +80,8 @@ public class Window : Game
 		fontWidthPerSize = refSize.X / 100f;
 
 		// Initial sizing
-		graphics.PreferredBackBufferWidth = 1280;
-		graphics.PreferredBackBufferHeight = 720;
+		graphics.PreferredBackBufferWidth = 1600; //1280
+		graphics.PreferredBackBufferHeight = 900; //720
 		graphics.ApplyChanges();
 
 		RecalculateTerminal();

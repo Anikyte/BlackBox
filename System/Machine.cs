@@ -4,15 +4,8 @@ using Path = System.IO.Path;
 
 namespace System;
 
-public static class System
+public static class Machine
 {
-	//todo: important: public static Cite(Path path)
-	//should compile a c# file and then connect it to the process that called it so that its contents may be accessed with `using`
-	//so something like
-	//```System.Cite("User/MathLib.cs");
-	//using MathLib;```
-	//alternatively, we add a precompiler to executed scripts that searches for using statements with paths and pulls in the relevant file but that seems so open to jank
-	
 	private static string GetSimpleTypeName(Type type)
 	{
 		if (type == typeof(void)) return "void";
@@ -75,10 +68,10 @@ public static class System
 				IEnumerable<Type> systemTypes = show switch
 				{
 					"simple" => allTypes.Where(t =>
-						t.Assembly == typeof(System).Assembly && t.Namespace.StartsWith("System")),
+						t.Assembly == typeof(Machine).Assembly && t.Namespace.StartsWith("System")),
 					"all" => allTypes.Where(t => t.Namespace.StartsWith("System")),
 					_ => allTypes.Where(t =>
-						t.Assembly == typeof(System).Assembly && t.Namespace.StartsWith("System"))
+						t.Assembly == typeof(Machine).Assembly && t.Namespace.StartsWith("System"))
 				};
 
 				systemTypes = systemTypes.OrderBy(t => t.Namespace).ThenBy(t => t.Name).ToList();
@@ -201,5 +194,31 @@ public static class System
 	
 	//Move()
 	//Copy()
-	
+
+	public static bool Install(string sourcePath, string? name = null)
+	{
+		var source = new Path(sourcePath);
+		string code = source.Read();
+
+		if (string.IsNullOrWhiteSpace(code))
+		{
+			Terminal.WriteLine($"Error: File '{sourcePath}' is empty or does not exist");
+			return false;
+		}
+
+		string libName = name ?? sourcePath.TrimEnd('/').Split('/').Last().Replace(".cs", "");
+		var dest = new Path($"System/Libraries/{libName}");
+		dest.Write(code);
+
+		// Execute the library code into the current state
+		var result = Sandbox.Execute(code);
+		if (!result.Success)
+		{
+			Terminal.WriteLine($"Warning: Library saved but failed to load: {result.ErrorMessage}");
+			return false;
+		}
+
+		Terminal.WriteLine($"Installed '{libName}' to System/Libraries/");
+		return true;
+	}
 }

@@ -3,6 +3,10 @@
 A video game about the end of everything through a C# REPL terminal. 
 
 ## Architecture
+**TODO**
+- Executable pipeline
+- Sounds on common
+
 **Hostspace**
 - the systems that run userspace
 - found in `Machine`
