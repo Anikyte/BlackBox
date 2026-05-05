@@ -6,6 +6,7 @@ A video game about the end of everything through a C# REPL terminal.
 **TODO**
 - Executable pipeline
 - Sounds on common
+- Switch to silk.net
 
 **Hostspace**
 - the systems that run userspace

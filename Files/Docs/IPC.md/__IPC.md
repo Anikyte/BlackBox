@@ -15,4 +15,6 @@ if (me.Messages.TryDequeue(out var message))
 	Status.Throw(0, me, message.Key + "(" + message.Timestamp + "): " + message.Value + "\n");
 }
 ```
-In case you haven't used concurrent collections, `Messages.TryDequeue` only returns `true` if there's something to dequeue. 
+In case you haven't used concurrent collections, `Messages.TryDequeue` only returns `true` if there's something to dequeue.
+
+Users may define any IPC types they like, however the machine comes with several kernel types built-in.
