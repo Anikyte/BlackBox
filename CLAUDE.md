@@ -6,6 +6,7 @@ This project is a video game emulating a full and novel C# based computer system
 - Don't use dedicated setter functions. Use properties
 - Use as few variables as necessary. It is better to compute a value than to store it
 - Always give a summary of what you've changed
+- always ask instead of guessing
 
 If needed, tests may be added to Files/System/Programs/Init.cs/__Init.cs
 Console.Write and Status.Throw will log to standard output

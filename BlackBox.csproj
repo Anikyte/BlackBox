@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Files\System\Libraries\ed.cs\__ed.cs" />
         <Compile Include="Files\System\Libraries\Info.cs\__Info.cs" />
         <Compile Include="Files\System\Libraries\MD.cs\__MD.cs" />
         <Compile Include="Files\System\Programs\IPC.cs\__IPC.cs" />

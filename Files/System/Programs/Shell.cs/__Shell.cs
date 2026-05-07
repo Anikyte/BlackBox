@@ -150,7 +150,7 @@ while (true)
 		else if (message.Key == "WriteEvent")
 		{
 			RenderWrapped(lineIndex, message.Value);
-			lineIndex += (message.Value.Length + Terminal.Width - 1) / Terminal.Width;
+			lineIndex = (lineIndex + (message.Value.Length + Terminal.Width - 1) / Terminal.Width) % Terminal.Height;
 		}
 	}
 
@@ -164,16 +164,16 @@ void RenderWrapped(int startRow, string text)
 {
 	int w = Terminal.Width;
 	for (int i = 0; i * w < text.Length; i++)
-		Terminal.SetRow(startRow + i, text.Substring(i * w, Math.Min(w, text.Length - i * w)));
+		Terminal.SetRow((startRow + i) % Terminal.Height, text.Substring(i * w, Math.Min(w, text.Length - i * w)));
 }
 
 void ExecuteBuffer()
 {
 	string prompt = "> " + buffer;
 	RenderWrapped(lineIndex, prompt);
-	lineIndex += (prompt.Length + Terminal.Width - 1) / Terminal.Width;
+	lineIndex = (lineIndex + (prompt.Length + Terminal.Width - 1) / Terminal.Width) % Terminal.Height;
 	var result = Process.Execute(buffer);
 	RenderWrapped(lineIndex, result.Item2);
-	lineIndex += (result.Item2.Length + Terminal.Width - 1) / Terminal.Width;
+	lineIndex = (lineIndex + (result.Item2.Length + Terminal.Width - 1) / Terminal.Width) % Terminal.Height;
 	buffer = "";
 }

@@ -41,38 +41,38 @@ public static class Terminal
 
 	// === Core Grid Operations ===
 
-	public static void SetChar(int x, int y, char c)
+	public static void SetChar(int x, int y, char c, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null)
 	{
 		if (x < 0 || x >= Width || y < 0 || y >= Height) return;
 		_buffer[y, x] = c;
-		_fgColors[y, x] = ColorFg;
-		_bgColors[y, x] = ColorBg;
+		_fgColors[y, x] = fg ?? ColorFg;
+		_bgColors[y, x] = bg ?? ColorBg;
 	}
 
-	public static void SetChar(Vector2 pos, char c) => SetChar((int)pos.X, (int)pos.Y, c);
+	public static void SetChar(Vector2 pos, char c, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null) => SetChar((int)pos.X, (int)pos.Y, c, fg, bg);
 
 	public static char GetChar(int x, int y) =>
 		(x < 0 || x >= Width || y < 0 || y >= Height) ? ' ' : _buffer[y, x];
 
 	public static char GetChar(Vector2 pos) => GetChar((int)pos.X, (int)pos.Y);
 
-	public static void SetRow(int y, string text, int startX = 0)
+	public static void SetRow(int y, string text, int startX = 0, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null)
 	{
 		if (y < 0 || y >= Height) return;
 		for (int x = startX; x < Width; x++)
-			if (x >= 0) SetChar(x, y, x - startX < text.Length ? text[x - startX] : ' ');
+			if (x >= 0) SetChar(x, y, x - startX < text.Length ? text[x - startX] : ' ', fg, bg);
 	}
 
-	public static void SetRow(Vector2 pos, string text) => SetRow((int)pos.Y, text, (int)pos.X);
+	public static void SetRow(Vector2 pos, string text, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null) => SetRow((int)pos.Y, text, (int)pos.X, fg, bg);
 
-	public static void SetColumn(int x, string text, int startY = 0)
+	public static void SetColumn(int x, string text, int startY = 0, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null)
 	{
 		if (x < 0 || x >= Width) return;
 		for (int y = startY; y < Height; y++)
-			if (y >= 0) SetChar(x, y, y - startY < text.Length ? text[y - startY] : ' ');
+			if (y >= 0) SetChar(x, y, y - startY < text.Length ? text[y - startY] : ' ', fg, bg);
 	}
 
-	public static void SetColumn(Vector2 pos, string text) => SetColumn((int)pos.X, text, (int)pos.Y);
+	public static void SetColumn(Vector2 pos, string text, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null) => SetColumn((int)pos.X, text, (int)pos.Y, fg, bg);
 
 	public static string GetRow(int y)
 	{
