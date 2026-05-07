@@ -1,6 +1,7 @@
 using System;
 using System.Peripherals;
 using System.IO;
+using System.Threading;
 
 static class Terminux
 {
@@ -11,7 +12,7 @@ static class Terminux
 		string img = new Path("User/testcard.b64").Read();
 		for (int i = 0; i < 128 * 128; i++)
 		{
-			//Thread.Sleep(1);
+			Thread.Sleep(1);
 			int x = i % 128, y = i / 128;
 			byte r = (byte)(b64.IndexOf(img[i * 3]) << 2);
 			byte g = (byte)(b64.IndexOf(img[i * 3 + 1]) << 2);

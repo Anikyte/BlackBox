@@ -71,7 +71,7 @@ public static class Reactor
         private readonly float maxTorque;
         private readonly float maxTemperature;
 
-        internal Motor(float jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("motor", "motor inc", 0x01)
+        internal Motor(float jammed, float maxSpeed, float maxTorque, float maxTemperature) : base("Motor", "General Electric", 0x01)
         {
             this.jammed = jammed;
             this.MaxSpeed = MathF.Round(maxSpeed * jammed);
@@ -83,7 +83,7 @@ public static class Reactor
     public class RTG : Device, ITemperature
     {
 
-        internal RTG() : base("rtg", "rtg inc", 0x02)
+        internal RTG() : base("Radioisotope Photovoltaic Generator", "UNESCO F.U.E.L. Program", 0x02)
         {
 
         }
@@ -115,7 +115,7 @@ public static class Reactor
 
         public readonly Motor Motor;
 
-        internal ControlRod(float jammed) : base("control rod", "reactor inc", 0x03)
+        internal ControlRod(float jammed) : base("Control Rod", "Pump and Dump Industry", 0x03)
         {
             Position = 0;
 
@@ -149,7 +149,7 @@ public static class Reactor
 
         public readonly Motor Motor;
 
-        internal Pump() : base("pump", "pump inc", 0x04)
+        internal Pump() : base("Pump", "Pump and Dump Industry", 0x04)
         {
 
         }
@@ -169,7 +169,7 @@ public static class Reactor
     {
         public FuelType FuelType;
 
-        internal FuelRod() : base("fuel rod", "fuel inc", 0x05)
+        internal FuelRod() : base("HEU Fuel Rod Assembly", "UNESCO F.U.E.L. Program", 0x05)
         {
 
         }

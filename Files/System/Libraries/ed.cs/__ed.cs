@@ -22,6 +22,13 @@ public class ED
 		for (int i = line + 1; i < array.Length; i++) result[i - 1] = array[i];
 		return result;
 	}
+
+	private int chars(string[] array)
+	{
+		int result = 0;
+		foreach (string line in array) { result += line.Length; }
+		return result;
+	}
 	
 	//constructor
 	public ED(Path p)
@@ -51,7 +58,8 @@ public class ED
 	//save
 	public void w()
 	{
-		Terminal.WriteLine("Did not save to "+path.ToString());
+		path.Write(lines);
+		Terminal.WriteLine($"Wrote {chars(lines)} chars to {path.ToString()}");
 	}
 
 	//print
@@ -69,5 +77,8 @@ public class ED
 		else { Terminal.WriteLine(lines[line]); }
 	}
 
-
+	public void p()
+	{
+		p(-1);
+	}
 }
