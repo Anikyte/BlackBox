@@ -1,0 +1,1 @@
+Script to convert an image to b64 with 6 bits per channel
