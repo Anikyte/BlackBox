@@ -1,4 +1,4 @@
-namespace BlackBox.Machine;
+namespace BlackBox.Machine.World;
 
 //stores the current world state for the sensor system
 //outputs raw sensor data

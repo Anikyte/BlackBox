@@ -60,7 +60,7 @@ public static class Host
 		}
 
 		deltaTime = (DateTime.UtcNow - lastUpdateTime).TotalSeconds;
-		World.ShipTime += (DateTime.UtcNow - lastUpdateTime).Ticks;
+		World.World.ShipTime += (DateTime.UtcNow - lastUpdateTime).Ticks;
 		lastUpdateTime = DateTime.UtcNow;
 		
 		//todo:

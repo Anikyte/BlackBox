@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-public static class MD
+public static class Man
 {
 	private const int width = 100;
 	

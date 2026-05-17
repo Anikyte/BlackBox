@@ -7,6 +7,11 @@ public enum FuelType
 
 public static class Reactor
 { 
+    internal const float NeutronFactor = 1;
+    internal const float AlphaFactor = 1;
+    internal const float BetaFactor = 1;
+    internal const float GammaFactor = 1;
+    
     public static List<RTG> RTGs { get; } = new List<RTG>();
     public static List<ControlRod> ControlRods { get; } = new List<ControlRod>();
     public static List<Pump> Pumps { get; } = new List<Pump>();
@@ -191,6 +196,11 @@ public static class Reactor
     }
 
     public static class HeatExchangerSecondary
+    {
+        
+    }
+
+    internal static void Loop()
     {
         
     }
