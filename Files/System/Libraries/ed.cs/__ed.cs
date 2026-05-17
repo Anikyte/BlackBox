@@ -82,3 +82,19 @@ public class ED
 		p(-1);
 	}
 }
+
+public static class ed
+{
+	private static ED instance;
+
+	public static void e(Path p) => instance = new ED(p);
+	public static void e(string p) => e(new Path(p));
+
+	public static void a(int line, string s) => instance.a(line, s);
+	public static void i(int line, string s) => instance.i(line, s);
+	public static void c(int line, string s) => instance.c(line, s);
+	public static void d(int line) => instance.d(line);
+	public static void w() => instance.w();
+	public static void p(int line) => instance.p(line);
+	public static void p() => instance.p();
+}
