@@ -4,9 +4,29 @@ A video game about the end of everything through a C# REPL terminal.
 
 ## Architecture
 **TODO**
-- Executable pipeline
-- Sounds on common
+- Improve MD displayer
+- Syntax highlighting library builtin
+- nano style text editor
+- Reactor subsystem
+- - control systems
+- - control loop
+- - api?
+- Reactor control program builtin
+- - both cli version and interactive page version
+- top program
+- - process management api
+- shell utilities (ls, touch, etc)
+- - page file viewer?
+- unify System/Libraries and System/Programs
+- write documentation (ugh)
+- figure out stellar drift gameplay mechanic
+- brainstorm rest of demo pipeline
+- Sound system
+- - Sounds on common actions
+- - Sounds on gameplay milestones
 - Switch to silk.net
+- - userspace vulkan api????
+- make it good
 
 **Hostspace**
 - the systems that run userspace
@@ -77,6 +97,3 @@ And they'll pick up a signal. A single small blip, barely registering on the mos
 The last echo of two long dead galaxies.  
 
 Just another data point for some monkey's research paper.
-
-## TODO
-- rewrite README.md
