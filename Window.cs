@@ -3,46 +3,50 @@ using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.IO;
+using Panel = System.Panel;
+using Terminal = System.Terminal;
+using Bitmap = System.Peripherals.Bitmap;
 
 namespace BlackBox;
 
-//todo: IMPORTANT: create api for bitmap and file subwindows
-//also make file subwindow actually useful!
-
-/// <summary>
-/// MonoGame window with terminal rendering (hostspace)
-/// </summary>
 public class Window : Game
 {
-	private const string TITLE = "Black Box";
-	private const string FONT_PATH = "./JetBrainsMono-Regular.ttf";
+	private const string Title = "Black Box";
+	private const string FontPath = "./JetBrainsMono-Regular.ttf";
+	private const int WindowWidth = 1600;
+	private const int WindowHeight = 900;
+	private const int BitmapSize = 256;
+	private const double TargetFps = 60.0;
 
-	public static int Gap = 6;
-	public static int CharSpacingH = -1;
-	public static int CharSpacingV = 3;
+	public static int Gap { get; set; } = 6;
+	public static int CharSpacingH { get; set; } = -1;
+	public static int CharSpacingV { get; set; } = 3;
 
 	private readonly GraphicsDeviceManager graphics;
-	private SpriteBatch? spriteBatch;
-	private Texture2D? pixelTexture;
-	private Texture2D? bitmapTexture;
-	private FontSystem? fontSystem;
-	private DynamicSpriteFont? font;
+	private SpriteBatch spriteBatch = null!;
+	private Texture2D pixelTexture = null!;
+	private Texture2D bitmapTexture = null!;
+	private FontSystem fontSystem = null!;
+	private DynamicSpriteFont font = null!;
 
-	private int charWidth;
-	private int charHeight;
 	private int cellWidth;
 	private int cellHeight;
 	private float fontWidthPerSize;
-	
-	public static Rectangle MainPanelRectangle;
-	public static Rectangle BitmapPanelRectangle;
-	public static Rectangle FilePanelRectangle;
-	public static Rectangle BackgroundRectangle; 
-	
-	public static RenderTarget2D MainPanel;
-	public static RenderTarget2D BitmapPanel;
-	public static RenderTarget2D FilePanel;
-	public static RenderTarget2D Background;
+
+	private int CharWidth => cellWidth - CharSpacingH;
+	private int CharHeight => cellHeight - CharSpacingV;
+
+	public static Rectangle PanelRectangle { get; private set; }
+	public static Rectangle TerminalRectangle { get; private set; }
+	public static Rectangle BitmapPanelRectangle { get; private set; }
+	public static Rectangle FilePanelRectangle { get; private set; }
+	public static Rectangle BackgroundRectangle { get; private set; }
+
+	public static RenderTarget2D PanelRenderTarget { get; private set; } = null!;
+	public static RenderTarget2D TerminalRenderTarget { get; private set; } = null!;
+	public static RenderTarget2D BitmapPanel { get; private set; } = null!;
+	public static RenderTarget2D FilePanel { get; private set; } = null!;
+	public static RenderTarget2D Background { get; private set; } = null!;
 	
 	public Window()
 	{
@@ -50,8 +54,8 @@ public class Window : Game
 		Content.RootDirectory = "Content";
 		IsMouseVisible = true;
 		IsFixedTimeStep = true;
-		TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 60.0);
-		Window.Title = TITLE;
+		TargetElapsedTime = TimeSpan.FromSeconds(1.0 / TargetFps);
+		Window.Title = Title;
 	}
 
 	protected override void Initialize()
@@ -64,58 +68,64 @@ public class Window : Game
 	{
 		spriteBatch = new SpriteBatch(GraphicsDevice);
 
-		if (!File.Exists(FONT_PATH))
+		if (!File.Exists(FontPath))
 		{
-			Console.WriteLine("Could not find font file: " + FONT_PATH);
+			Console.WriteLine("Could not find font file: " + FontPath);
 			Exit();
 			return;
 		}
 
 		fontSystem = new FontSystem();
-		fontSystem.AddFont(File.ReadAllBytes(FONT_PATH));
+		fontSystem.AddFont(File.ReadAllBytes(FontPath));
 
-		// Measure font dimensions at reference size to get scaling ratio
 		var refFont = fontSystem.GetFont(100);
-		var refSize = refFont.MeasureString("M");
-		fontWidthPerSize = refSize.X / 100f;
+		fontWidthPerSize = refFont.MeasureString("M").X / 100f;
 
-		// Initial sizing
-		graphics.PreferredBackBufferWidth = 1600; //1280
-		graphics.PreferredBackBufferHeight = 900; //720
+		graphics.PreferredBackBufferWidth = WindowWidth;
+		graphics.PreferredBackBufferHeight = WindowHeight;
 		graphics.ApplyChanges();
 
-		RecalculateTerminal();
+		CalculateLayout();
 
-		MainPanel = new RenderTarget2D(GraphicsDevice, System.Terminal.Width * cellWidth, System.Terminal.Height * cellHeight);
-		BitmapPanel = new RenderTarget2D(GraphicsDevice, 256, 256);
-		FilePanel = new RenderTarget2D(GraphicsDevice, 256, 256);
-		Background = new RenderTarget2D(GraphicsDevice, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
+		PanelRenderTarget = new RenderTarget2D(GraphicsDevice, Panel.Width * cellWidth, Panel.Height * cellHeight);
+		TerminalRenderTarget = new RenderTarget2D(GraphicsDevice, Terminal.Width * cellWidth, Terminal.Height * cellHeight);
+		BitmapPanel = new RenderTarget2D(GraphicsDevice, BitmapSize, BitmapSize);
+		FilePanel = new RenderTarget2D(GraphicsDevice, BitmapSize, BitmapSize);
+		Background = new RenderTarget2D(GraphicsDevice, WindowWidth, WindowHeight);
 
 		pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
 		pixelTexture.SetData(new[] { Color.White });
 
-		bitmapTexture = new Texture2D(GraphicsDevice, System.Peripherals.Bitmap.Width, System.Peripherals.Bitmap.Height);
-		System.Peripherals.Bitmap.Clear();
+		bitmapTexture = new Texture2D(GraphicsDevice, Bitmap.Width, Bitmap.Height);
+		Bitmap.Clear();
 	}
 
-	private void RecalculateTerminal()
+	private void CalculateLayout()
 	{
-		Recalculate(Window.ClientBounds.Width, Window.ClientBounds.Height);
+		int sideW = (int)(WindowWidth * 0.3f);
+		int miniSize = Math.Min(sideW, (WindowHeight - Gap) / 2);
+		sideW = Math.Min(sideW, miniSize);
+		int mainW = WindowWidth - sideW - Gap;
 
-		// Calculate cell size to fit Terminal.Width columns in main panel
-		cellWidth = MainPanelRectangle.Width / System.Terminal.Width;
-		charWidth = cellWidth - CharSpacingH;
+		BackgroundRectangle = new Rectangle(0, 0, WindowWidth, WindowHeight);
+		BitmapPanelRectangle = new Rectangle(mainW + Gap, 0, sideW, miniSize);
+		FilePanelRectangle = new Rectangle(mainW + Gap, WindowHeight - miniSize, sideW, miniSize);
 
-		// Calculate font size from desired character width
-		int fontSize = (int)(charWidth / fontWidthPerSize);
-		font = fontSystem?.GetFont(fontSize);
+		cellWidth = mainW / Terminal.Width;
+		int fontSize = (int)(CharWidth / fontWidthPerSize);
+		font = fontSystem.GetFont(fontSize);
+		cellHeight = (int)font.MeasureString("M").Y + CharSpacingV;
 
-		// Measure actual character height from font
-		var measured = font?.MeasureString("M") ?? new System.Numerics.Vector2(charWidth, charWidth);
-		charHeight = (int)measured.Y;
-		cellHeight = charHeight + CharSpacingV;
+		int totalRows = WindowHeight / cellHeight;
+		int panelRows = (int)(totalRows * 0.6f);
+		int terminalRows = totalRows - panelRows;
+		Panel.Height = panelRows;
+		Terminal.Height = terminalRows;
 
-		System.Terminal.Height = MainPanelRectangle.Height / cellHeight;
+		int panelH = panelRows * cellHeight;
+		int terminalH = terminalRows * cellHeight;
+		PanelRectangle = new Rectangle(0, 0, mainW, panelH);
+		TerminalRectangle = new Rectangle(0, panelH, mainW, terminalH);
 	}
 
 	protected override void Update(GameTime gameTime)
@@ -127,56 +137,58 @@ public class Window : Game
 
 	protected override void Draw(GameTime gameTime)
 	{
-		if (spriteBatch == null || pixelTexture == null || font == null)
-			return;
-
-		RecalculateTerminal();
-
-		// --- Background ---
 		GraphicsDevice.SetRenderTarget(Background);
 		GraphicsDevice.Clear(Color.White);
 
-		// --- Main Panel (terminal) ---
-		GraphicsDevice.SetRenderTarget(MainPanel);
+		GraphicsDevice.SetRenderTarget(PanelRenderTarget);
 		GraphicsDevice.Clear(Color.Black);
 		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-		for (int y = 0; y < System.Terminal.Height; y++)
+		for (int y = 0; y < Panel.Height; y++)
+		for (int x = 0; x < Panel.Width; x++)
 		{
-			for (int x = 0; x < System.Terminal.Width; x++)
-			{
-				var bgColor = System.Terminal.GetBackgroundColor(x, y);
-				var fgColor = System.Terminal.GetForegroundColor(x, y);
-				var ch = System.Terminal.GetChar(x, y);
-				int posX = x * cellWidth;
-				int posY = y * cellHeight;
-
-				spriteBatch.Draw(pixelTexture, new Rectangle(posX, posY, cellWidth, cellHeight), new Color(bgColor.r, bgColor.g, bgColor.b));
-				if (ch != ' ')
-					spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgColor.r, fgColor.g, fgColor.b));
-			}
+			var (bgR, bgG, bgB) = Panel.GetBackgroundColor(x, y);
+			var (fgR, fgG, fgB) = Panel.GetForegroundColor(x, y);
+			var ch = Panel.GetChar(x, y);
+			int posX = x * cellWidth, posY = y * cellHeight;
+			spriteBatch.Draw(pixelTexture, new Rectangle(posX, posY, cellWidth, cellHeight), new Color(bgR, bgG, bgB));
+			if (ch != ' ')
+				spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgR, fgG, fgB));
 		}
 		spriteBatch.End();
 
-		// --- Bitmap Panel ---
-		GraphicsDevice.SetRenderTarget(BitmapPanel);
-		bitmapTexture?.SetData(System.Peripherals.Bitmap.Buffer);
+		GraphicsDevice.SetRenderTarget(TerminalRenderTarget);
+		GraphicsDevice.Clear(Color.Black);
 		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-		if (bitmapTexture != null)
-			spriteBatch.Draw(bitmapTexture, new Rectangle(0, 0, 256, 256), Color.White);
+		for (int y = 0; y < Terminal.Height; y++)
+		for (int x = 0; x < Terminal.Width; x++)
+		{
+			var (bgR, bgG, bgB) = Terminal.GetBackgroundColor(x, y);
+			var (fgR, fgG, fgB) = Terminal.GetForegroundColor(x, y);
+			var ch = Terminal.GetChar(x, y);
+			int posX = x * cellWidth, posY = y * cellHeight;
+			spriteBatch.Draw(pixelTexture, new Rectangle(posX, posY, cellWidth, cellHeight), new Color(bgR, bgG, bgB));
+			if (ch != ' ')
+				spriteBatch.DrawString(font, ch.ToString(), new Vector2(posX, posY), new Color(fgR, fgG, fgB));
+		}
 		spriteBatch.End();
 
-		// --- File Panel ---
+		GraphicsDevice.SetRenderTarget(BitmapPanel);
+		bitmapTexture.SetData(Bitmap.Buffer);
+		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+		spriteBatch.Draw(bitmapTexture, new Rectangle(0, 0, BitmapSize, BitmapSize), Color.White);
+		spriteBatch.End();
+
 		GraphicsDevice.SetRenderTarget(FilePanel);
 		GraphicsDevice.Clear(Color.Gray);
 
-		// --- Composite to screen ---
 		GraphicsDevice.SetRenderTarget(null);
 		spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
 		spriteBatch.Draw(Background, BackgroundRectangle, Color.White);
-		spriteBatch.Draw(MainPanel, MainPanelRectangle, Color.White);
+		spriteBatch.Draw(PanelRenderTarget, PanelRectangle, Color.White);
+		spriteBatch.Draw(TerminalRenderTarget, TerminalRectangle, Color.White);
 		spriteBatch.Draw(FilePanel, FilePanelRectangle, Color.White);
 		spriteBatch.End();
-		// Bitmap panel with no antialiasing
+
 		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 		spriteBatch.Draw(BitmapPanel, BitmapPanelRectangle, Color.White);
 		spriteBatch.End();
@@ -184,22 +196,9 @@ public class Window : Game
 		base.Draw(gameTime);
 	}
 
-	public static void Recalculate(int screenW, int screenH)
-	{
-		int sideW = (int)(screenW * 0.3f);
-		int miniSize = Math.Min(sideW, (screenH - Gap) / 2);
-		sideW = Math.Min(sideW, miniSize);
-		int mainW = screenW - sideW - Gap;
-
-		BackgroundRectangle = new Rectangle(0, 0, screenW, screenH);
-		MainPanelRectangle = new Rectangle(0, 0, mainW, screenH);
-		BitmapPanelRectangle = new Rectangle(mainW + Gap, 0, sideW, miniSize);
-		FilePanelRectangle = new Rectangle(mainW + Gap, screenH - miniSize, sideW, miniSize);
-	}
-	
 	protected override void UnloadContent()
 	{
-		pixelTexture?.Dispose();
+		pixelTexture.Dispose();
 		base.UnloadContent();
 	}
 	

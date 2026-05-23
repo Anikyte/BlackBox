@@ -11,7 +11,7 @@ public static class Man
 
 	public static void Read(Path path)
 	{
-		Terminal.Clear();
+		Panel.Clear();
 		string text = string.Join("\n", (string[])path.Read());
 		int x = 0, y = 1;
 		bool inMultiCode = false, inInlineCode = false, inBold = false;
@@ -46,7 +46,7 @@ public static class Man
 			// Handle newlines
 			if (text[i] == '\n')
 			{
-				if (inMultiCode) while (x < width) Terminal.SetChar(x++, y, ' ', fgCode, bgCode);
+				if (inMultiCode) while (x < width) Panel.SetChar(x++, y, ' ', fgCode, bgCode);
 				x = 0;
 				y++;
 				if (!inMultiCode) inInlineCode = false;
@@ -55,7 +55,7 @@ public static class Man
 			// Get colors based on state (code > bold > normal)
 			var fg = inMultiCode || inInlineCode ? fgCode : inBold ? fgBold : fgNormal;
 			var bg = inMultiCode || inInlineCode ? bgCode : inBold ? bgBold : bgNormal;
-			Terminal.SetChar(x, y, text[i], fg, bg);
+			Panel.SetChar(x, y, text[i], fg, bg);
 			x++;
 			if (x >= width) { x = 0; y++; }
 		}
