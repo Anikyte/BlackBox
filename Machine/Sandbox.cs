@@ -22,7 +22,7 @@ public static class Sandbox
 
 	public static readonly ConcurrentBag<SubProcess> Processes = new();
 
-	private const string LibrariesPath = "./Files/System/Libraries";
+	private const string LibrariesPath = "./Files/System/Programs";
 	private static SandboxAssemblyBuilder assemblyBuilder = null!;
 	private static string[] libraryCodes = [];
 

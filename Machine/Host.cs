@@ -22,7 +22,7 @@ public static class Host
 		new Chronometer("Chronometer", "Timex", 0x11);
 		
 		// Execute Init.cs initialization as special init process
-		Sandbox.SpawnInit(new Path("System/Programs/Init.cs").Read());
+		Sandbox.SpawnInit(new Path("System/Init.cs").Read());
 	}
 
 	public static void Loop()
