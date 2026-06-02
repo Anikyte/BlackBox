@@ -12,6 +12,7 @@ public static class Man
 	public static void Read(Path path)
 	{
 		Panel.Clear();
+		Panel.SetRow(0,path.ToString(),bg:(255,255,255),fg:(0,0,0));
 		string text = string.Join("\n", (string[])path.Read());
 		int x = 0, y = 1;
 		bool inMultiCode = false, inInlineCode = false, inBold = false;

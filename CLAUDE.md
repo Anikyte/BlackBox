@@ -3,6 +3,7 @@ This project is a video game emulating a full and novel C# based computer system
 - Prioritize static classes
 - No single use functions
 - Code should be as concise as possible
+- Comment unclear code
 - Don't use dedicated setter functions. Use properties
 - Use as few variables as necessary. It is better to compute a value than to store it
 - Always give a summary of what you've changed

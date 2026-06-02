@@ -7,9 +7,9 @@ A video game about the end of everything through a C# REPL terminal.
 - Improve MD displayer
 - - live syntax highlighting instead?
 - Syntax highlighting library builtin
+- optimize ipc
 - emacs style ui
 - - command buffer pane + terminal pane
-- - - implement terminal pane and shrink command pane
 - - - refactor programs to output to terminal/output pane
 - - - rewrite shell again to handle pane switching et al
 - Reactor subsystem

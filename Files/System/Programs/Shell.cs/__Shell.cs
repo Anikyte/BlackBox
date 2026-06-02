@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 //command buffer string
@@ -19,16 +20,16 @@ public class Shell
 	private List<string> backBuffer = new();
 	private string commandBuffer = "";
 	private string savedBuffer = "";
-	
 	private List<string> outputBuffer = new();
-	
-	private int cursorPos = 0;
 	private int historyIndex = -1;
+	private List<(string text, (byte r, byte g, byte b)? fg, (byte r, byte g, byte b)? bg)> renderBuffer = new();
+	
 	private Dictionary<Keys, (DateTime pressed, DateTime lastFired)> keyRepeatState = new();
 	private const int RepeatDelay = 400;
 	private const int RepeatRate = 50;
 	private Keys[] prevKeys = [];
 
+	private int cursorPos = 0;
 	private int lineIndex = 0;
 
 	public void Main()
@@ -37,12 +38,25 @@ public class Shell
 		Output($"{me.Name} [1]: New shell: {me.GUID}");
 		Process.Send(new Message("RegisterShellEvent", "Clear", me));
 		Process.Send(new Message("RegisterShellEvent", "Write", me));
-
+		
 		while (true)
 		{
 			// Process
 			ProcessMessages();
 			ProcessInput();
+			
+			//Handle IPC
+			if (me.Messages.TryDequeue(out var message))
+			{
+				if (message.Key == "ClearEvent")
+				{
+					outputBuffer.Clear();
+					commandBuffer = "";	
+				} else if (message.Key == "WriteEvent")
+				{
+					Output(message.Value);
+				}
+			}
 
 			// Render
 			Render();
@@ -156,49 +170,52 @@ public class Shell
 
 	private void Render()
 	{
-		RenderOutputBuffer();
-		RenderCommandBuffer();
+		renderBuffer.Clear();
+		ComposeOutputBuffer();
+		ComposeCommandBuffer();
+		for (int i = 0; i < renderBuffer.Count; i++)
+			Terminal.SetRow(i, renderBuffer[i].text, fg: renderBuffer[i].fg, bg: renderBuffer[i].bg);
 	}
 
-	public void Output(string text) => outputBuffer.Append(text);
+	public void Output(string text) => outputBuffer.Insert(0,text);
 
-	private void RenderOutputBuffer()
+	private void SetRow(int row, string text, (byte r, byte g, byte b)? fg = null, (byte r, byte g, byte b)? bg = null)
+	{
+		while (renderBuffer.Count <= row) renderBuffer.Add(("", null, null));
+		renderBuffer[row] = (text, fg, bg);
+	}
+
+	private void ComposeOutputBuffer()
 	{
 		for (int i = 0; i < outputBuffer.Count; i++)
-		{
-			Terminal.SetRow(i+1, outputBuffer[i]);
-		}
+			SetRow(i+1, outputBuffer[i]);
 	}
-	
-	private void RenderCommandBuffer()
+
+	private void ComposeCommandBuffer()
 	{
-		Terminal.SetRow(0, "> ");
-		List<string> buffer = new();
-		for (int i = 0; i * Terminal.Width < commandBuffer.Length; i++)
-		{
-			buffer.Add(commandBuffer.Substring(i * Terminal.Width, Math.Min(Terminal.Width, commandBuffer.Length - i * Terminal.Width)));
-		}
-		for (int i = 0; i < buffer.Count; i++)
-		{
-			Terminal.SetRow(i+1, outputBuffer[i], 2);
-		}
+		string text = "> " + commandBuffer[..cursorPos] + "|" + commandBuffer[cursorPos..];
+		int w = Terminal.Width;
+		for (int i = 0; i * w < text.Length; i++)
+			SetRow(i, text.Substring(i * w, Math.Min(w, text.Length - i * w)), fg: (0, 0, 0), bg: (255, 255, 255));
 	}
 	
-	private void RenderWrapped(int startRow, string text)
+	/*private void RenderWrapped(int startRow, string text)
 	{
 		int w = Terminal.Width;
 		for (int i = 0; i * w < text.Length; i++)
 			Terminal.SetRow((startRow + i) % Terminal.Height, text.Substring(i * w, Math.Min(w, text.Length - i * w)));
-	}
+	}*/
 
 	private void ExecuteBuffer()
 	{
-		string prompt = "> " + buffer;
-		RenderWrapped(lineIndex, prompt);
-		lineIndex = (lineIndex + (prompt.Length + Terminal.Width - 1) / Terminal.Width) % Terminal.Height;
-		var result = Process.Execute(buffer);
-		RenderWrapped(lineIndex, result.Item2);
-		lineIndex = (lineIndex + (result.Item2.Length + Terminal.Width - 1) / Terminal.Width) % Terminal.Height;
-		buffer = "";
+		if (commandBuffer.Length > 0)
+		{
+			var result = Process.Execute(commandBuffer);
+			if (result.Item2.Length > 0)
+			{
+				outputBuffer.Insert(0, result.Item2);
+			}
+			commandBuffer = "";
+		}
 	}
 }
