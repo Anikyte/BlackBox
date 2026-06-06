@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.IO;
 
 public class ED
@@ -65,36 +66,72 @@ public class ED
 	//print
 	public void p(int line)
 	{
-		if (line == -1)
-		{
-			for (int i = 0; i < lines.Length; i++) Terminal.WriteLine(i + ": " + lines[i]);
-		}
-		else if (line == -2) //easter egg
+		if (line < 0)
 		{
 			Terminal.WriteLine("ed is the standard text editor!");
 		}
-		else if (line < -2) { Terminal.WriteLine("?"); }
-		else { Terminal.WriteLine(lines[line]); }
+		else
+		{
+			Panel.Clear();
+			for (int i = line, k = 1; i < lines.Length; i++)
+			{
+				Panel.SetRow(k, i + ": " + lines[i]);
+				k++;
+			}
+			
+		}
 	}
 
 	public void p()
 	{
-		p(-1);
+		p(0);
 	}
 }
 
 public static class ed
 {
 	private static ED instance;
+	private static int lastLine;
+	
+	public static void e(Path p)
+	{
+		instance = new ED(p);
+		instance.p();
+	}
 
-	public static void e(Path p) => instance = new ED(p);
 	public static void e(string p) => e(new Path(p));
 
-	public static void a(int line, string s) => instance.a(line, s);
-	public static void i(int line, string s) => instance.i(line, s);
-	public static void c(int line, string s) => instance.c(line, s);
-	public static void d(int line) => instance.d(line);
-	public static void w() => instance.w();
-	public static void p(int line) => instance.p(line);
-	public static void p() => instance.p();
+	public static void a(int line, string s)
+	{
+		instance.a(line, s);
+		instance.p(lastLine);
+	}
+
+	public static void i(int line, string s) 
+	{
+		instance.i(line, s);
+		instance.p(lastLine);
+	}
+	public static void c(int line, string s)
+	{ 
+		instance.c(line, s);
+		instance.p(lastLine);
+	}
+	public static void d(int line)
+	{
+		instance.d(line);
+		instance.p(lastLine);
+	}
+	public static void w()
+	{
+		instance.w();
+	}
+
+	public static void p(int line)
+	{
+		lastLine = line;
+		instance.p(line);
+	}
+
+	public static void p() => p(0);
 }

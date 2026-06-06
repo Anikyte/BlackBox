@@ -9,6 +9,7 @@ This project is a video game emulating a full and novel C# based computer system
 - Always give a summary of what you've changed
 - Always ask instead of guessing
 - Do not touch strings unless explicitly instructed to do so
+- Do only what is asked
 
 If needed, tests may be added to Files/System/Programs/Init.cs/__Init.cs
 Console.Write and Status.Throw will log to standard output

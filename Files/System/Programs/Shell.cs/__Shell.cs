@@ -42,7 +42,6 @@ public class Shell
 		while (true)
 		{
 			// Process
-			ProcessMessages();
 			ProcessInput();
 			
 			//Handle IPC
@@ -62,15 +61,6 @@ public class Shell
 			Render();
 		}
 		Terminal.SetRow(lineIndex, "Shell complete");
-	}
-
-	private void ProcessMessages()
-	{
-		while (Process.Self.Messages.TryDequeue(out var message))
-		{
-			if (message.Key == "ClearEvent") { outputBuffer.Clear(); lineIndex = 0; }
-			else if (message.Key == "WriteEvent") Output(message.Value);
-		}
 	}
 
 	private void ProcessInput()
@@ -105,37 +95,37 @@ public class Shell
 
 			if (!shouldFire) continue;
 
-			// if (key == Keys.Up)
-			// {
-			// 	if (historyIndex == -1 && backBuffer.Count > 0)
-			// 	{
-			// 		savedBuffer = commandBuffer;
-			// 		historyIndex = backBuffer.Count - 1;
-			// 		commandBuffer = backBuffer[historyIndex];
-			// 	}
-			// 	else if (historyIndex > 0)
-			// 	{
-			// 		historyIndex--;
-			// 		commandBuffer = backBuffer[historyIndex];
-			// 	}
-			// 	cursorPos = commandBuffer.Length;
-			// 	continue;
-			// }
-			// if (key == Keys.Down)
-			// {
-			// 	if (historyIndex >= 0)
-			// 	{
-			// 		historyIndex++;
-			// 		if (historyIndex >= backBuffer.Count)
-			// 		{
-			// 			historyIndex = -1;
-			// 			commandBuffer = savedBuffer;
-			// 		}
-			// 		else commandBuffer = backBuffer[historyIndex];
-			// 	}
-			// 	cursorPos = commandBuffer.Length;
-			// 	continue;
-			// }
+			if (key == Keys.Up)
+			{
+			 	if (historyIndex == -1 && backBuffer.Count > 0)
+			 	{
+			 		savedBuffer = commandBuffer;
+			 		historyIndex = backBuffer.Count - 1;
+			 		commandBuffer = backBuffer[historyIndex];
+			 	}
+			 	else if (historyIndex > 0)
+			 	{
+			 		historyIndex--;
+			 		commandBuffer = backBuffer[historyIndex];
+			 	}
+			 	cursorPos = commandBuffer.Length;
+			 	continue;
+			}
+			if (key == Keys.Down)
+			{
+			 	if (historyIndex >= 0)
+			 	{
+			 		historyIndex++;
+			 		if (historyIndex >= backBuffer.Count)
+			 		{
+			 			historyIndex = -1;
+			 			commandBuffer = savedBuffer;
+			 		}
+			 		else commandBuffer = backBuffer[historyIndex];
+			 	}
+			 	cursorPos = commandBuffer.Length;
+				continue;
+			}
 			if (key == Keys.Left) { if (cursorPos > 0) cursorPos--; continue; }
 			if (key == Keys.Right) { if (cursorPos < commandBuffer.Length) cursorPos++; continue; }
 			if (key == Keys.Home) { cursorPos = 0; continue; }
@@ -193,18 +183,20 @@ public class Shell
 
 	private void ComposeCommandBuffer()
 	{
-		string text = "> " + commandBuffer[..cursorPos] + "|" + commandBuffer[cursorPos..];
+		string text = "";
+		if (cursorPos == commandBuffer.Length)
+		{
+			text = "> " + commandBuffer + "["; 
+		}
+		else
+		{
+			text = "> " + commandBuffer[..cursorPos] + "[" + commandBuffer[(cursorPos+1)..];
+		}
+
 		int w = Terminal.Width;
 		for (int i = 0; i * w < text.Length; i++)
 			SetRow(i, text.Substring(i * w, Math.Min(w, text.Length - i * w)), fg: (0, 0, 0), bg: (255, 255, 255));
 	}
-	
-	/*private void RenderWrapped(int startRow, string text)
-	{
-		int w = Terminal.Width;
-		for (int i = 0; i * w < text.Length; i++)
-			Terminal.SetRow((startRow + i) % Terminal.Height, text.Substring(i * w, Math.Min(w, text.Length - i * w)));
-	}*/
 
 	private void ExecuteBuffer()
 	{
