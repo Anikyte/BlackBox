@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.Design;
 using System.IO;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -38,6 +39,7 @@ public class Shell
 		Output($"{me.Name} [1]: New shell: {me.GUID}");
 		Process.Send(new Message("RegisterShellEvent", "Clear", me));
 		Process.Send(new Message("RegisterShellEvent", "Write", me));
+		Output("Run `Man.Read(\"Docs/Help.md\")` for help");
 		
 		while (true)
 		{
@@ -130,7 +132,7 @@ public class Shell
 			if (key == Keys.Right) { if (cursorPos < commandBuffer.Length) cursorPos++; continue; }
 			if (key == Keys.Home) { cursorPos = 0; continue; }
 			if (key == Keys.End) { cursorPos = commandBuffer.Length; continue; }
-
+			
 			char? c = key switch
 			{
 				>= Keys.A and <= Keys.Z => SHIFT ? key.ToString()[0] : char.ToLower(key.ToString()[0]),
@@ -210,4 +212,10 @@ public class Shell
 			commandBuffer = "";
 		}
 	}
+	
+	// Shell utilities //
+	public void List() {}
+	
+	public void Remove() {}
+	
 }

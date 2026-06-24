@@ -27,8 +27,10 @@ public static class Host
 
 	public static void Loop()
 	{
+		// IPC
 		if (Process.Messages.TryDequeue(out var message))
 		{
+			// event registration
 			if (message.Key == "RegisterKeyEvent" && message.SubProcess != null)
 			{
 				KeyEventListeners.Add(message.SubProcess, message.Value);
@@ -41,8 +43,19 @@ public static class Host
 				else if (message.Value == "Write") Terminal.WriteEventListeners.Add(message.SubProcess);
 				Status.Throw(1, "Registered ShellEvent for "+message.SubProcess.GUID.ToString()+" of type "+message.Value);
 			}
+			
+			// broadcast events
+			if (message.Key == "Broadcast" && message.SubProcess != null)
+			{
+				foreach (SubProcess process in Process.Processes)
+				{
+					Process.Send(process, message);
+				}
+				Status.Throw(1, "Sent broadcast IPC message from "+message.SubProcess.GUID.ToString()+" of type "+message.Value);
+			}
 		}
 
+		// KeyEvent
 		int key = Input.GetCharPressed();
 		if (key > 0)
 		{
@@ -54,6 +67,7 @@ public static class Host
 			}
 		}
 		
+		// device update
 		foreach (Device device in Device.Devices)
 		{
 			device.Loop(deltaTime); //todo: consider fixed point decimal
