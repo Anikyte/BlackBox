@@ -20,3 +20,7 @@ Builtin program and command list:
 - w(): writes to file
 - p(int line): prints every line after `line`
 - p(): prints all lines
+*Info*
+- Reactor(): displays reactor info
+*Utils*
+- GetSensors(): displays sensor data
