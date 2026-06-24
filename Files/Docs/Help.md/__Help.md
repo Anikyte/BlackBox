@@ -20,6 +20,13 @@ Builtin program and command list:
 - w(): writes to file
 - p(int line): prints every line after `line`
 - p(): prints all lines
+*Shell*
+- Output(string s): prints to stdout
+- List(string or Path path): lists all directories in directory `path`
+- List(): lists root directory
+- Add(string or Path path): adds a new directory `path`
+- Remove(string or Path path): removes a directory `path`
+See `Docs/Directories.md` for an intro on the filesystem
 *Info*
 - Reactor(): displays reactor info
 *Utils*
