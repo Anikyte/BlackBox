@@ -99,6 +99,7 @@ public class Path
 
 	public void Move(Path path) => SysIO.Directory.Move(GetHostspacePath(userspacePath), GetHostspacePath(path.userspacePath));
 
+	public void Remove() => SysIO.Directory.Delete(GetHostspacePath(userspacePath), true);
 	// public void Copy(Path path)
 	// {
 	// 	SysIO.Directory.CreateDirectory(GetHostspacePath(path.userspacePath));

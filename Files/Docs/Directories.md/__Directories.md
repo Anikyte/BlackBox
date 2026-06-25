@@ -7,8 +7,6 @@ contain other paths and also be written to directly.
 On writing to a `Path` object with `Path.Write`, 
 it will generate the path and all intermediary paths automatically.
 You never have to worry about creating paths!
-Using `Shell.Remove` will clean up empty directories automatically, too!
-
 Any binary data can be written to a path object.
 You will generally only write text to them, though.
 

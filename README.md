@@ -60,8 +60,8 @@ A video game about the end of everything through a C# REPL terminal.
 
 **Compilation**
 - in order to partially replace certain system methods without reimplementing or recompiling the system library, 
-we use runtime code analysis to frakenstein together the default system library and our custom `System` assembly
-- said custom assembly is generated seperately from the `System` directory in the project folder
+we use runtime code analysis to frankenstein together the default system library and our custom `System` assembly
+- said custom assembly is generated separately from the `System` directory in the project folder
 - as such, all types and methods are under the system namespace
 - to avoid conflicts with the actual system implementations during compilation, we must avoid identifiers that already exist
 - this can be done either by renaming your custom type or using a different subnamespace
