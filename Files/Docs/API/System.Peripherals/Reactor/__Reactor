@@ -1,0 +1,40 @@
+Reactor (static)
+
+Nuclear reactor components.
+
+Properties:
+  RTGs                        - List of RTG devices
+  ControlRods                 - List of control rods
+  Pumps                       - List of coolant pumps
+  FuelRods                    - List of fuel rods
+
+Nested Classes:
+  Motor       - Motor with speed/torque control
+  RTG         - Radioisotope thermoelectric generator
+  ControlRod  - Reactor control rod
+  Pump        - Coolant pump
+  FuelRod     - Nuclear fuel rod
+
+Interface: ITemperature
+  Temperature                 - Current temperature
+  NeutronFlux                 - Neutron radiation level
+  AlphaFlux                   - Alpha radiation level
+  BetaFlux                    - Beta radiation level
+  GammaFlux                   - Gamma radiation level
+
+Motor:
+  Speed                       - Motor speed (settable)
+  Torque                      - Current torque output
+  BackEMF                     - Back electromotive force
+  MaxSpeed                    - Maximum speed limit
+
+ControlRod:
+  Position                    - Rod insertion depth (settable)
+  Motor                       - Associated motor
+
+Pump:
+  FlowRate                    - Current flow rate
+  Motor                       - Associated motor
+
+FuelRod:
+  FuelType                    - Type of fuel

@@ -1,0 +1,7 @@
+Namespace: System.Peripherals.Sensors
+
+Sensor systems.
+
+Classes:
+  Image     - Image block processing
+  Channel   - Color channel enum (Red, Green, Blue)

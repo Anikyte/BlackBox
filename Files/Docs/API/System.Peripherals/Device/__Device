@@ -1,0 +1,14 @@
+Device
+
+Base device class.
+
+Static Properties:
+  Devices                     - List of all devices
+
+Properties:
+  GUID                        - Device unique identifier
+  Name                        - Device name
+  Manufacturer                - Device manufacturer
+  Slot                        - Physical slot number
+  Type                        - Device type code
+  ID                          - Device ID

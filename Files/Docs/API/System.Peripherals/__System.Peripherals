@@ -1,0 +1,9 @@
+Namespace: System.Peripherals
+
+Hardware device interfaces.
+
+Classes:
+  Chronometer - System time
+  Device      - Base device class
+  Reactor     - Nuclear reactor components
+  Bitmap      - Pixel buffer

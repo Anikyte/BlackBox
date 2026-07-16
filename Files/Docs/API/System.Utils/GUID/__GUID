@@ -1,0 +1,19 @@
+GUID
+
+UUID generation and handling.
+
+Static Methods:
+  V4(rng)                     - Generate random UUID v4
+  V7(rng)                     - Generate time-based UUID v7
+  V8(rng, high, low, family, node) - Generate custom UUID v8
+
+Methods:
+  ToUInt()                    - Convert to Int128
+  ToHex()                     - Convert to hex string
+  ToByteArray()               - Convert to byte array
+
+Properties:
+  Version                     - UUID version number
+  Variant                     - UUID variant number
+  High, Low, Family, Node     - UUID segment values
+  HighHex, LowHex, FamilyHex, NodeHex - Hex representations

@@ -1,0 +1,9 @@
+Data (struct)
+
+File data wrapper with implicit conversions.
+
+Operators:
+  implicit byte[]             - Convert to byte array
+  implicit char[]             - Convert to char array
+  implicit string[]           - Convert to line array
+  implicit string             - Convert to string

@@ -96,6 +96,19 @@ public class Path
 
 		return paths.ToArray();
 	}
+	
+	//temp?
+	public static void List(string path)
+	{
+		List(new Path(path));
+	}
+	public static void List(Path path)
+	{
+		foreach (string dir in path.List())
+		{
+			Terminal.WriteLine(dir);
+		}
+	}
 
 	public void Move(Path path) => SysIO.Directory.Move(GetHostspacePath(userspacePath), GetHostspacePath(path.userspacePath));
 

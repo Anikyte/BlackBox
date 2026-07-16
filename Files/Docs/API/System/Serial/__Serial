@@ -1,0 +1,10 @@
+Serial (static)
+
+Serial buffer I/O.
+
+Methods:
+  Write(s)                    - Write to serial buffer
+  Read(s)                     - Read from serial with prompt
+
+Fields:
+  ConsoleBuffer               - Current buffer contents

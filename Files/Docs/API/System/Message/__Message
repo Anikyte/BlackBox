@@ -1,0 +1,10 @@
+Message
+
+Inter-process message structure.
+
+Fields:
+  Key                         - Message identifier
+  Value                       - Message content string
+  Payload                     - Arbitrary data object
+  SubProcess                  - Sender process reference
+  Timestamp                   - When message was created

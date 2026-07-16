@@ -1,0 +1,23 @@
+Panel (static)
+
+Secondary display buffer.
+
+Properties:
+  Width, Height               - Display dimensions
+  DefaultFg, DefaultBg        - Default colors (r,g,b)
+  ColorFg, ColorBg            - Current colors (r,g,b)
+  CursorX, CursorY            - Cursor position
+
+Methods:
+  SetChar(x, y, c, fg, bg)    - Set character at position
+  GetChar(x, y)               - Get character at position
+  SetRow(y, text, startX, fg, bg)    - Write text horizontally
+  SetColumn(x, text, startY, fg, bg) - Write text vertically
+  GetRow(y)                   - Read entire row as string
+  GetColumn(x)                - Read entire column as string
+  Clear()                     - Clear display
+  GetForegroundColor(x, y)    - Get fg color at position
+  GetBackgroundColor(x, y)    - Get bg color at position
+  ResetColors()               - Reset to default colors
+  Write(text)                 - Write text at cursor
+  WriteLine(text)             - Write text with newline

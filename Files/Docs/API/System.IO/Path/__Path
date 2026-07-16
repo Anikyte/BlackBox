@@ -1,0 +1,20 @@
+Path
+
+File path operations.
+
+Constructors:
+  Path(string)                - Create path from string
+  Path(path, append)          - Create path with appended segment
+
+Methods:
+  Read()                      - Read file contents as Data
+  Write(text)                 - Write string to file
+  Write(string[])             - Write lines to file
+  Write(char[])               - Write char array to file
+  Write(byte[])               - Write bytes to file
+  List()                      - List child paths
+  Move(path)                  - Move file to new path
+  Remove()                    - Delete file
+
+Operators:
+  implicit string             - Convert to string path

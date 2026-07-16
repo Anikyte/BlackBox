@@ -1,0 +1,6 @@
+Input (static)
+
+Keyboard input.
+
+Properties:
+  Pressed                     - Array of currently pressed keys

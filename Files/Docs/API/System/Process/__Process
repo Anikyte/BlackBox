@@ -1,0 +1,18 @@
+Process (static)
+
+Process spawning and inter-process communication.
+
+Methods:
+  Spawn(name, code)           - Create new process from code string
+  Spawn(name, path)           - Create new process from file path
+  Get(guid)                   - Get process by GUID
+  Send(process, message)      - Send message to specific process
+  Send(message)               - Broadcast message to all processes
+  Execute(code)               - Execute code synchronously, returns (success, output)
+  List()                      - List all process IDs
+  Await(pid)                  - Block until process completes
+
+Properties:
+  Messages                    - Queue of received messages
+  Processes                   - List of all subprocesses
+  Self                        - Current process reference

@@ -1,0 +1,12 @@
+Status
+
+Status logging.
+
+Methods:
+  Throw(level, process, value)     - Log status message with level
+  Throw(level, guid, name, value)  - Log status with GUID and name
+
+Fields:
+  Process                     - Associated process
+  Level                       - Status level
+  Value                       - Status message

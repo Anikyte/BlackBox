@@ -1,0 +1,8 @@
+System API Reference
+
+Namespaces:
+  System/                     - Core system classes
+  System.IO/                  - File and input operations
+  System.Utils/               - Utility classes
+  System.Peripherals/         - Hardware device interfaces
+  System.Peripherals.Sensors/ - Sensor systems

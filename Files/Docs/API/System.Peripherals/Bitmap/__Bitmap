@@ -1,0 +1,12 @@
+Bitmap (static)
+
+128x128 pixel buffer.
+
+Constants:
+  Width                       - 128
+  Height                      - 128
+
+Methods:
+  Set(x, y, r, g, b)          - Set pixel color (RGB)
+  Set(x, y, color)            - Set pixel color (uint)
+  Clear(color)                - Fill bitmap with color

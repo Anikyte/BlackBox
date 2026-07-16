@@ -1,0 +1,8 @@
+Channel (enum)
+
+Color channel selection.
+
+Values:
+  Red
+  Green
+  Blue

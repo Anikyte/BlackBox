@@ -1,0 +1,6 @@
+Chronometer
+
+System time.
+
+Properties:
+  Time (static)               - Current system time

@@ -1,0 +1,10 @@
+Image
+
+Image block processing.
+
+Static Methods:
+  Metadata()                  - Get image metadata
+
+Methods:
+  NextBlock()                 - Advance to next image block
+  GetBlock(channel, j)        - Get block data for channel

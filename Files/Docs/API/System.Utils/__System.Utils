@@ -1,0 +1,6 @@
+Namespace: System.Utils
+
+Utility classes.
+
+Classes:
+  GUID    - UUID generation and handling

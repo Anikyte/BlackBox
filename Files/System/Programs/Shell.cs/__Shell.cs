@@ -212,10 +212,4 @@ public class Shell
 			commandBuffer = "";
 		}
 	}
-	
-	// Shell utilities //
-	public void List() {}
-	
-	public void Remove() {}
-	
 }

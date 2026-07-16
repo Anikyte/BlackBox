@@ -1,0 +1,12 @@
+Namespace: System
+
+Core system classes for machine control, processes, and display.
+
+Classes:
+  Machine   - System utilities and program execution
+  Process   - Process spawning and IPC
+  Message   - Inter-process message structure
+  Serial    - Serial buffer I/O
+  Status    - Status logging
+  Panel     - Secondary display buffer
+  Terminal  - Primary terminal display

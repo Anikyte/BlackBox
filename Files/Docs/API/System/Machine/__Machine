@@ -1,0 +1,11 @@
+Machine (static)
+
+System utilities and program execution.
+
+Methods:
+  Help(className, show)       - Display help for classes/methods
+  Vars()                      - List all variables
+  Execute(path)               - Run code from a file path
+  List(path)                  - List contents of a path
+  Touch(path)                 - Create empty file at path
+  Install(sourcePath, name)   - Install a program to bin
