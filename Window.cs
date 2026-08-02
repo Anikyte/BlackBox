@@ -12,14 +12,18 @@ namespace BlackBox;
 public class Window : Game
 {
 	private const string Title = "Black Box";
-	private const string FontPath = "./JetBrainsMono-Regular.ttf";
-	private const int WindowWidth = 1600;
-	private const int WindowHeight = 900;
+	
+	private const string FontPath = "./Fonts/IBM-VGA.ttf";
+	private const int FontSize = 32;
+	public const int CharsPerLine = 87; //87 for 32px font
+	
+	private const int WindowWidth = 1920;
+	private const int WindowHeight = 1000;
 	private const int BitmapSize = 256;
 	private const double TargetFps = 60.0;
 
 	public static int Gap { get; set; } = 6;
-	public static int CharSpacingH { get; set; } = -1;
+	public static int CharSpacingH { get; set; } = 0;
 	public static int CharSpacingV { get; set; } = 3;
 
 	private readonly GraphicsDeviceManager graphics;
@@ -31,7 +35,6 @@ public class Window : Game
 
 	private int cellWidth;
 	private int cellHeight;
-	private float fontWidthPerSize;
 
 	private int CharWidth => cellWidth - CharSpacingH;
 	private int CharHeight => cellHeight - CharSpacingV;
@@ -78,9 +81,6 @@ public class Window : Game
 		fontSystem = new FontSystem();
 		fontSystem.AddFont(File.ReadAllBytes(FontPath));
 
-		var refFont = fontSystem.GetFont(100);
-		fontWidthPerSize = refFont.MeasureString("M").X / 100f;
-
 		graphics.PreferredBackBufferWidth = WindowWidth;
 		graphics.PreferredBackBufferHeight = WindowHeight;
 		graphics.ApplyChanges();
@@ -111,9 +111,8 @@ public class Window : Game
 		BitmapPanelRectangle = new Rectangle(mainW + Gap, 0, sideW, miniSize);
 		FilePanelRectangle = new Rectangle(mainW + Gap, WindowHeight - miniSize, sideW, miniSize);
 
-		cellWidth = mainW / Terminal.Width;
-		int fontSize = (int)(CharWidth / fontWidthPerSize);
-		font = fontSystem.GetFont(fontSize);
+		font = fontSystem.GetFont(FontSize);
+		cellWidth = (int)font.MeasureString("M").X + CharSpacingH;
 		cellHeight = (int)font.MeasureString("M").Y + CharSpacingV;
 
 		int totalRows = WindowHeight / cellHeight;
@@ -124,8 +123,9 @@ public class Window : Game
 
 		int panelH = panelRows * cellHeight;
 		int terminalH = terminalRows * cellHeight;
-		PanelRectangle = new Rectangle(0, 0, mainW, panelH);
-		TerminalRectangle = new Rectangle(0, panelH, mainW, terminalH);
+		int gridW = cellWidth * Terminal.Width;
+		PanelRectangle = new Rectangle(0, 0, gridW, panelH);
+		TerminalRectangle = new Rectangle(0, panelH, gridW, terminalH);
 	}
 
 	protected override void Update(GameTime gameTime)
@@ -182,7 +182,7 @@ public class Window : Game
 		GraphicsDevice.Clear(Color.Gray);
 
 		GraphicsDevice.SetRenderTarget(null);
-		spriteBatch.Begin(samplerState: SamplerState.AnisotropicClamp);
+		spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 		spriteBatch.Draw(Background, BackgroundRectangle, Color.White);
 		spriteBatch.Draw(PanelRenderTarget, PanelRectangle, Color.White);
 		spriteBatch.Draw(TerminalRenderTarget, TerminalRectangle, Color.White);

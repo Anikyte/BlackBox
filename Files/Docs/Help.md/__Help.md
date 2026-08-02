@@ -31,3 +31,5 @@ See `Docs/Directories.md` for an intro on the filesystem
 - Reactor(): displays reactor info
 *Utils*
 - GetSensors(): displays sensor data
+
+Further system APIs are documented in `Docs/API`.

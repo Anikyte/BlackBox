@@ -1,11 +1,12 @@
 using System.Numerics;
+using BlackBox;
 using BlackBox.Machine;
 
 namespace System;
 
 public static class Panel
 {
-	public static int Width { get; private set; } = 100;
+	public static int Width { get; private set; } = Window.CharsPerLine;
 
 	private static int _height = 22;
 	public static int Height
@@ -109,7 +110,8 @@ public static class Panel
 
 public static class Terminal
 {
-	public static int Width { get; private set; } = 100;
+	
+	public static int Width { get; private set; } = Window.CharsPerLine;
 
 	private static int _height = 16;
 	public static int Height
