@@ -13,15 +13,21 @@
         <Compile Include="Files\System\Libraries\MD.cs\__MD.cs" />
         <Compile Include="Files\System\Programs\IPC.cs\__IPC.cs" />
         <Compile Include="Files\System\Programs\sh.cs\sh.cs" />
-        <None Update="JetBrainsMono-Regular.ttf">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="OFL.txt">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <Compile Remove="Files\**\*.cs" />
         <None Include="Files\**\*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Fonts\JetBrainsMono-Regular.ttf">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Fonts\IBM-VGA.ttf">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Fonts\VGA-437.ttf">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
