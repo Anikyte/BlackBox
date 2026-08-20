@@ -12,6 +12,7 @@ A video game about the end of everything through a C# REPL terminal.
 - - command buffer pane + terminal pane
 - - - refactor programs to output to terminal/output pane
 - - - rewrite shell again to handle pane switching et al
+- registry
 - Reactor subsystem
 - - control systems
 - - control loop
@@ -19,18 +20,21 @@ A video game about the end of everything through a C# REPL terminal.
 - Reactor control program builtin
 - - both cli version and interactive page version
 - top program
-- - process management api
+- - process management api/services
 - shell utilities (ls, touch, etc)
 - - page file viewer?
 - write documentation (ugh)
-- figure out stellar drift gameplay mechanic
 - brainstorm rest of demo pipeline
+- - sensors output bitmap visual data and object data
+- - figure out stellar drift gameplay mechanic
+- - - match star positions against a drift database of some kind?
+- - - - how to make not insanely difficult?
+- - - - something to do with pulsars?
+- - - - maybe a builtin handles matching logic?
 - cleanup code (especially ai stuff)
 - Sound system
 - - Sounds on common actions
 - - Sounds on gameplay milestones
-- Switch to silk.net
-- - userspace vulkan api????
 - make it good
 
 **Hostspace**

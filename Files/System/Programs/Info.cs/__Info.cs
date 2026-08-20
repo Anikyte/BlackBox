@@ -2,16 +2,28 @@ using System.Peripherals;
 
 public static class Info
 {
-	public static void Reactor()
+	public static class Reactor
 	{
-		Terminal.Clear();
-		Terminal.WriteLine("Fuel Rods:");
-		foreach (Reactor.FuelRod rod in System.Peripherals.Reactor.FuelRods) { Terminal.WriteLine(rod.GUID.ToString()); }
-		Terminal.WriteLine("Control Rods:");
-		foreach (Reactor.ControlRod rod in System.Peripherals.Reactor.ControlRods) { Terminal.WriteLine(rod.GUID.ToString()); }
-		Terminal.WriteLine("Pumps:");
-		foreach (Reactor.Pump pump in System.Peripherals.Reactor.Pumps) { Terminal.WriteLine(pump.GUID.ToString()); }
-		Terminal.WriteLine("RTGs:");
-		foreach (Reactor.RTG rtg in System.Peripherals.Reactor.RTGs) { Terminal.WriteLine(rtg.GUID.ToString()); }
+		public static void GUIDs()
+		{
+			Panel.Clear();
+			int row = 0;
+			void List(string header, IEnumerable<Device> devices)
+			{
+				Panel.SetRow(row++, header, 0, (0,0,0),(255,255,255));
+				int i = 0;
+				foreach (Device device in devices)
+				{
+					Panel.SetRow(row, device.GUID.ToString(), i % 2 * (Panel.Width / 2));
+					row += i++ % 2; // advance only after the second GUID on a row
+				}
+				row += i % 2; // account for a half-filled final row
+			}
+
+			List("Fuel Rods:", System.Peripherals.Reactor.FuelRods);
+			List("Control Rods:", System.Peripherals.Reactor.ControlRods);
+			List("Pumps:", System.Peripherals.Reactor.Pumps);
+			List("RTGs:", System.Peripherals.Reactor.RTGs);
+		}
 	}
 }
