@@ -1,3 +1,5 @@
+using System.Peripherals.Sensors;
+using System.Utils;
 using Microsoft.Xna.Framework;
 
 namespace BlackBox.Machine.World;
@@ -8,6 +10,7 @@ public class Objectoid
 	
 	public int Diameter;
 	public Vector3 Position;
+	public GUID GUID;
 }
 
 public class Planet : Objectoid
@@ -17,7 +20,27 @@ public class Planet : Objectoid
 
 public class Star : Objectoid
 {
+	public int Luminosity;
+	public int Temperature;
+}
+
+public class Pulsar : Star
+{
+	public float Period;
+	public float PeriodDerivative;
 	
+	public Pulsar(float period, float periodDerivative, int luminosity, int temperature, int diameter, Vector3 position)
+	{
+		Period = period;
+		PeriodDerivative = periodDerivative;
+		Luminosity = luminosity;
+		Temperature = temperature;
+		Diameter = diameter;
+		Position = position;
+		GUID = GUID.V7(new Random()); //todo: single global random
+		
+		Readout.Pulsars.Add(this);
+	}
 }
 
 public class Filament : Objectoid

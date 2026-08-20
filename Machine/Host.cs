@@ -2,6 +2,8 @@ using System.IO;
 using System.Peripherals;
 using System.Text.RegularExpressions;
 using System.Utils;
+using BlackBox.Machine.World;
+using Microsoft.Xna.Framework;
 using DateTime = System.DateTime;
 
 namespace BlackBox.Machine;
@@ -19,6 +21,7 @@ public static class Host
 	{
 		Device.Initialize();
 		Reactor.Initialize(Random, 5, 12, 4, 12);
+		new Pulsar(5.2f, 0.002f, 1200, 14000, 150, new Vector3(0,0,0));
 		new Chronometer("Chronometer", "Timex", 0x11);
 		
 		// Execute Init.cs initialization as special init process

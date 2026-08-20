@@ -10,6 +10,8 @@
 //once 70% or something of blocks are read, trigger next gamestage
 //alternatively, if prerendering is used, check for pixels on the display buffer like those printer codes
 
+using BlackBox.Machine.World;
+
 namespace System.Peripherals.Sensors;
 
 public enum Channel
@@ -52,4 +54,11 @@ public class Image {
 		}
 		return bytes;
 	}
+}
+
+public class Readout
+{
+	public static List<Pulsar> Pulsars = new();
+	public static List<Star> Stars = new();
+	public static List<Planet> Planets = new();
 }
