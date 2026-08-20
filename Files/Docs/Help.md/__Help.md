@@ -28,7 +28,7 @@ Builtin program and command list:
 - Remove(string or Path path): removes a directory `path`
 See `Docs/Directories.md` for an intro on the filesystem
 *Info*
-- Reactor(): displays reactor info
+- Reactor.GUIDs(): displays reactor info
 *Utils*
 - GetSensors(): displays sensor data
 
