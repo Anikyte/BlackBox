@@ -2,8 +2,8 @@ Welcome to BlackBox! This document describes basic function of the C# shell.
 
 A distinction should be made between programs and commands. 
 Programs are singular scripts providing sets of commands.
-For example, the program *Man* provides the command *Read*,
-which can be invoked using *Man.Read(args)*.
+For example, the program *Man* provides the command **Read**,
+which can be invoked using *Man*.**Read(**args**)**.
 For now, all programs are listed here. In future,
 each will have its own man entry and an easy way to access it.
 

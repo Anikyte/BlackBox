@@ -29,6 +29,12 @@
         <None Update="Fonts\VGA-437.ttf">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Files\User\Pulsars\Quinn2156.mds\Quinn2156.md">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Files\User\Pulsars\Quinn2156.md\pulsars.db\pulsars.db">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>

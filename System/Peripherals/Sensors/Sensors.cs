@@ -56,9 +56,14 @@ public class Image {
 	}
 }
 
-public class Readout
+public class Scan
 {
 	public static List<Pulsar> Pulsars = new();
 	public static List<Star> Stars = new();
 	public static List<Planet> Planets = new();
+
+	public Scan()
+	{
+		
+	}
 }

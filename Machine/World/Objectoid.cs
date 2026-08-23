@@ -39,7 +39,7 @@ public class Pulsar : Star
 		Position = position;
 		GUID = GUID.V7(new Random()); //todo: single global random
 		
-		Readout.Pulsars.Add(this);
+		Scan.Pulsars.Add(this);
 	}
 }
 
